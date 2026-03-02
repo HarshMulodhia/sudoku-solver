@@ -118,6 +118,19 @@ class TestSudokuRLAgent:
         reward = agent.compute_reward(game, (0, 0), 1, False)
         assert reward < 0
 
+    def test_correct_move_higher_reward_than_wrong(self):
+        """Placing the correct digit should yield higher reward"""
+        agent = SudokuRLAgent(device="cpu")
+        game = SudokuGame("easy")
+        # Find an empty cell and its solution digit
+        empty = np.argwhere(game.board == 0)[0]
+        row, col = int(empty[0]), int(empty[1])
+        correct_digit = int(game.solution[row, col])
+        wrong_digit = (correct_digit % 9) + 1  # different digit
+        correct_reward = agent.compute_reward(game, (row, col), correct_digit, True)
+        wrong_reward = agent.compute_reward(game, (row, col), wrong_digit, True)
+        assert correct_reward > wrong_reward
+
     def test_remember_and_train(self):
         agent = SudokuRLAgent(device="cpu")
         state = np.zeros((9, 9, 10), dtype=np.float32)
