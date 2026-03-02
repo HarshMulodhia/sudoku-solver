@@ -30,6 +30,7 @@ def ui():
         ui.mode = 'manual'
         ui.start_time = _time.time()
         ui.score = 0
+        ui.undo_stack = []
     return ui
 
 
@@ -242,3 +243,92 @@ class TestScoreAndTimer:
         ui.score = 10
         ui.reset_timer()
         assert ui.score == 0
+
+
+class TestIsDigitHighlighted:
+    """Tests for the is_digit_highlighted method"""
+
+    def test_no_selection_returns_false(self, ui):
+        """No digit highlight when nothing is selected"""
+        ui.selected_cell = None
+        assert ui.is_digit_highlighted(0, 0) is False
+
+    def test_selected_empty_cell_returns_false(self, ui):
+        """No digit highlight when selected cell is empty"""
+        empty = np.argwhere(ui.game.board == 0)[0]
+        ui.selected_cell = (int(empty[0]), int(empty[1]))
+        # Any other cell should not be digit-highlighted
+        assert ui.is_digit_highlighted(0, 0) is False
+
+    def test_same_digit_highlighted(self, ui):
+        """Cells with the same digit as the selected cell are highlighted"""
+        # Find a given cell with a non-zero digit
+        given = np.argwhere(ui.game.original_board > 0)
+        row0, col0 = int(given[0][0]), int(given[0][1])
+        digit = int(ui.game.board[row0, col0])
+        ui.selected_cell = (row0, col0)
+
+        # Find another cell with the same digit
+        matches = np.argwhere(ui.game.board == digit)
+        if len(matches) > 1:
+            row1, col1 = int(matches[1][0]), int(matches[1][1])
+            assert ui.is_digit_highlighted(row1, col1)
+
+    def test_different_digit_not_highlighted(self, ui):
+        """Cells with different digits are not digit-highlighted"""
+        given = np.argwhere(ui.game.original_board > 0)
+        row0, col0 = int(given[0][0]), int(given[0][1])
+        digit = int(ui.game.board[row0, col0])
+        ui.selected_cell = (row0, col0)
+
+        # Find a cell with a different non-zero digit
+        for idx in range(len(given)):
+            r, c = int(given[idx][0]), int(given[idx][1])
+            if ui.game.board[r, c] != digit:
+                assert not ui.is_digit_highlighted(r, c)
+                break
+
+
+class TestSetDifficulty:
+    """Tests for the set_difficulty method"""
+
+    def test_set_difficulty_easy(self, ui):
+        ui.btn_easy = Button(0, 0, 10, 10, "E", active=False)
+        ui.btn_medium = Button(0, 0, 10, 10, "M", active=False)
+        ui.btn_hard = Button(0, 0, 10, 10, "H", active=False)
+        ui.difficulty_buttons = [ui.btn_easy, ui.btn_medium, ui.btn_hard]
+        ui.set_difficulty('easy')
+        assert ui.btn_easy.active is True
+        assert ui.btn_medium.active is False
+        assert ui.btn_hard.active is False
+
+    def test_set_difficulty_hard(self, ui):
+        ui.btn_easy = Button(0, 0, 10, 10, "E", active=False)
+        ui.btn_medium = Button(0, 0, 10, 10, "M", active=False)
+        ui.btn_hard = Button(0, 0, 10, 10, "H", active=False)
+        ui.difficulty_buttons = [ui.btn_easy, ui.btn_medium, ui.btn_hard]
+        ui.set_difficulty('hard')
+        assert ui.btn_hard.active is True
+        assert ui.btn_easy.active is False
+
+
+class TestUndoStack:
+    """Tests for the undo stack"""
+
+    def test_undo_stack_initially_empty(self, ui):
+        """Undo stack should be empty on init"""
+        assert ui.undo_stack == []
+
+    def test_undo_stack_records_moves(self, ui):
+        """Appending to undo stack records moves"""
+        ui.undo_stack.append((0, 0, 0))
+        assert len(ui.undo_stack) == 1
+        assert ui.undo_stack[0] == (0, 0, 0)
+
+    def test_undo_stack_pop(self, ui):
+        """Popping from undo stack returns last move"""
+        ui.undo_stack.append((1, 2, 3))
+        ui.undo_stack.append((4, 5, 6))
+        row, col, prev = ui.undo_stack.pop()
+        assert (row, col, prev) == (4, 5, 6)
+        assert len(ui.undo_stack) == 1

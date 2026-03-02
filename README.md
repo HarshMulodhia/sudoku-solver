@@ -47,6 +47,7 @@ sudoku-rl-solver/
 ├── tests/                     # Test suite
 │   ├── test_config.py
 │   ├── test_sudoku_game.py
+│   ├── test_pygame_ui.py
 │   ├── test_rl_agent.py
 │   └── test_backtracking_solver.py
 └── models/                    # Saved trained models
@@ -102,7 +103,9 @@ cd notebooks && jupyter notebook solver_comparison.ipynb
 ```
 
 ### UI Features
-- **Modern Design**: Dark theme with neon accents
+- **Modern Design**: Dark/Light theme toggle with neon accents
+- **3×3 Box Borders**: Thick borders and alternating backgrounds differentiate 3×3 blocks
+- **Digit Highlighting**: Selecting a cell highlights all cells with the same digit
 - **Animations**: 
   - Smooth cell highlighting
   - Particle effects on valid solutions
@@ -112,7 +115,8 @@ cd notebooks && jupyter notebook solver_comparison.ipynb
   - Mouse/keyboard input
   - Real-time hint system
   - Step-by-step execution
-  - Difficulty selection
+  - Difficulty selection (Easy/Medium/Hard buttons)
+  - Undo support (button and Ctrl+Z)
 
 ## Configuration
 

@@ -229,6 +229,8 @@ Frame rendering order (60 FPS):
 2. Draw cell backgrounds with colors:
    - Selected: Cyan highlight
    - Hover: Blue glow
+   - Digit match: Highlighted (same digit as selected cell)
+   - Same row/col/box: Highlighted
    - Given: Light blue
    - User-filled: Green
    - Default: Dark gray
@@ -236,8 +238,9 @@ Frame rendering order (60 FPS):
 4. Draw grid borders (2px normal, 4px for 3×3 boxes)
 5. Draw & update particles
 6. Render UI panel with info
-7. Draw instructions
-8. Update display
+7. Draw buttons (theme, difficulty, mode, undo)
+8. Draw instructions
+9. Update display
 ```
 
 ### Particle Effects
@@ -346,10 +349,32 @@ Tracked per 50 episodes:
 |-----|--------|
 | 1-9 | Place digit in selected cell |
 | Delete/Backspace | Clear selected cell |
+| Ctrl+Z | Undo last move |
 | R | Reset to original puzzle |
 | H | Get hint for selected cell |
-| Space | Auto-solve with RL agent |
+| Space | Auto-solve with active solver |
 | Q | Quit game |
+
+### Difficulty Selection
+
+The UI panel includes **Easy**, **Medium**, and **Hard** buttons. Clicking a
+difficulty button generates a new puzzle at that level:
+
+- **Easy**: 40 givens
+- **Medium**: 30 givens
+- **Hard**: 20 givens
+
+### Digit Highlighting
+
+Selecting a cell that contains a digit automatically highlights every other
+cell on the board that contains the same digit. This makes it easy to spot
+placements and conflicts at a glance.
+
+### Undo
+
+Every digit placement is recorded. Click the **Undo (Ctrl+Z)** button or
+press **Ctrl+Z** to revert the last move. The undo stack is cleared when a
+new puzzle is generated or the board is reset.
 
 ---
 
