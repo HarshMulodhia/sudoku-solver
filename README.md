@@ -35,13 +35,17 @@ sudoku-rl-solver/
 ├── config.py                  # Configuration & hyperparameters
 ├── sudoku_game.py            # Game logic & constraint handling
 ├── rl_agent.py               # DQN agent implementation
+├── backtracking_solver.py    # Deterministic backtracking solver
 ├── pygame_ui.py              # High-tech pygame interface
 ├── train.py                  # Training script
 ├── solver.py                 # Inference & visualization
+├── notebooks/                # Analysis notebooks
+│   └── solver_comparison.ipynb  # Backtracking vs RL comparison
 ├── tests/                    # Test suite
 │   ├── test_config.py
 │   ├── test_sudoku_game.py
-│   └── test_rl_agent.py
+│   ├── test_rl_agent.py
+│   └── test_backtracking_solver.py
 └── models/                   # Saved trained models
     └── sudoku_dqn_*.pth
 ```
@@ -79,6 +83,20 @@ python -m pytest tests/ -v
   - -1 for invalid move
   - +100 for puzzle completion
   - Constraint violation penalties
+
+### Deterministic Backtracking Solver
+- **Algorithm**: Constraint propagation (naked singles) + recursive backtracking
+- **Heuristic**: Minimum Remaining Values (MRV) – always branches on the cell with the fewest candidates
+- **Guarantee**: Finds a valid solution whenever one exists (100 % success rate)
+- **Speed**: Solves most 9×9 puzzles in < 5 ms
+
+### Solver Comparison Notebook
+A Jupyter notebook (`notebooks/solver_comparison.ipynb`) benchmarks both solvers
+on easy / medium / hard puzzles and compares correctness, speed, and reliability.
+Run it with:
+```bash
+cd notebooks && jupyter notebook solver_comparison.ipynb
+```
 
 ### UI Features
 - **Modern Design**: Dark theme with neon accents
