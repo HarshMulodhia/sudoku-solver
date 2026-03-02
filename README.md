@@ -32,17 +32,24 @@ sudoku-rl-solver/
 ├── .github/workflows/ci.yml  # CI/CD pipeline (lint + test)
 ├── environment.yml            # Conda env (GPU-enabled PyTorch)
 ├── requirements.txt           # pip dependencies
-├── config.py                  # Configuration & hyperparameters
-├── sudoku_game.py            # Game logic & constraint handling
-├── rl_agent.py               # DQN agent implementation
-├── pygame_ui.py              # High-tech pygame interface
-├── train.py                  # Training script
-├── solver.py                 # Inference & visualization
-├── tests/                    # Test suite
+├── src/                       # Source / library modules
+│   ├── __init__.py
+│   ├── config.py              # Configuration & hyperparameters
+│   ├── sudoku_game.py         # Game logic & constraint handling
+│   ├── rl_agent.py            # DQN agent implementation
+│   ├── backtracking_solver.py # Deterministic backtracking solver
+│   └── pygame_ui.py           # High-tech pygame interface
+├── scripts/                   # Executable scripts
+│   ├── train.py               # Training script
+│   └── solver.py              # Inference & visualization
+├── notebooks/                 # Analysis notebooks
+│   └── solver_comparison.ipynb  # Backtracking vs RL comparison
+├── tests/                     # Test suite
 │   ├── test_config.py
 │   ├── test_sudoku_game.py
-│   └── test_rl_agent.py
-└── models/                   # Saved trained models
+│   ├── test_rl_agent.py
+│   └── test_backtracking_solver.py
+└── models/                    # Saved trained models
     └── sudoku_dqn_*.pth
 ```
 
@@ -51,16 +58,16 @@ sudoku-rl-solver/
 ### 1. Train the Agent (Optional)
 ```bash
 # Train on CPU
-python train.py --episodes 1000 --difficulty medium --device cpu
+python scripts/train.py --episodes 1000 --difficulty medium --device cpu
 
 # Train on GPU (requires CUDA-enabled conda env)
-python train.py --episodes 1000 --difficulty medium --device cuda
+python scripts/train.py --episodes 1000 --difficulty medium --device cuda
 ```
 
 ### 2. Run Solver with UI
 ```bash
-python solver.py --mode play  # Manual play + solver assist
-python solver.py --mode solve # Auto-solve visualization
+python scripts/solver.py --mode play  # Manual play + solver assist
+python scripts/solver.py --mode solve # Auto-solve visualization
 ```
 
 ### 3. Run Tests
@@ -80,6 +87,20 @@ python -m pytest tests/ -v
   - +100 for puzzle completion
   - Constraint violation penalties
 
+### Deterministic Backtracking Solver
+- **Algorithm**: Constraint propagation (naked singles) + recursive backtracking
+- **Heuristic**: Minimum Remaining Values (MRV) – always branches on the cell with the fewest candidates
+- **Guarantee**: Finds a valid solution whenever one exists (100 % success rate)
+- **Speed**: Solves most 9×9 puzzles in < 5 ms
+
+### Solver Comparison Notebook
+A Jupyter notebook (`notebooks/solver_comparison.ipynb`) benchmarks both solvers
+on easy / medium / hard puzzles and compares correctness, speed, and reliability.
+Run it with:
+```bash
+cd notebooks && jupyter notebook solver_comparison.ipynb
+```
+
 ### UI Features
 - **Modern Design**: Dark theme with neon accents
 - **Animations**: 
@@ -95,7 +116,7 @@ python -m pytest tests/ -v
 
 ## Configuration
 
-Edit `config.py` to customize:
+Edit `src/config.py` to customize:
 - Neural network architecture
 - Learning hyperparameters (α, γ, ε)
 - Replay buffer size

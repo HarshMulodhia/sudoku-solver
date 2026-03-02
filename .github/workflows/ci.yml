@@ -29,7 +29,7 @@ jobs:
 
       - name: Lint with flake8
         run: |
-          flake8 config.py sudoku_game.py rl_agent.py train.py solver.py --count --statistics
+          flake8 src/config.py src/sudoku_game.py src/rl_agent.py src/backtracking_solver.py scripts/train.py scripts/solver.py --count --statistics
 
       - name: Run tests
         run: |

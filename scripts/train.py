@@ -4,7 +4,11 @@ import argparse
 import numpy as np
 from tqdm import tqdm
 import os
+import sys
 import torch
+
+# Allow running directly: add src/ to path
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
 
 from config import rl_config, DIFFICULTY_LEVELS
 from sudoku_game import SudokuGame
