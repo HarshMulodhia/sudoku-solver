@@ -352,16 +352,11 @@ COLOR_THEME = "cyberpunk"
 ### Setup (Linux/macOS)
 
 ```bash
-# Create project directory
-mkdir sudoku-rl-solver && cd sudoku-rl-solver
+# Option A: Conda (recommended for GPU training)
+conda env create -f environment.yml
+conda activate sudoku-rl-solver
 
-# Clone files from provided modules
-
-# Create virtual environment
-python3.9 -m venv venv
-source venv/bin/activate
-
-# Install dependencies
+# Option B: pip (CPU only)
 pip install -r requirements.txt
 ```
 
