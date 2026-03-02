@@ -64,6 +64,7 @@ class UIConfig:
     COLOR_TEXT : Tuple[int, ...]            = (214, 226, 245) # off-white (panel text)
     COLOR_PANEL_BG : Tuple[int, ...]        = (12, 18, 30)    # info panel background
     COLOR_BOX_BORDER : Tuple[int, ...]      = (0, 180, 255)   # 3×3 box outline
+    COLOR_CELL_HIGHLIGHT : Tuple[int, ...]  = (20, 40, 80)    # row/col/box highlight
     
     # Animations
     ANIMATION_DURATION: int = 300  # ms

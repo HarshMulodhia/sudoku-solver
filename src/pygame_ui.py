@@ -211,6 +211,21 @@ class SudokuUI:
                 # Thick cyan border
                 pygame.draw.rect(surface, self.box_border_color, box_rect, self.box_border_width)
     
+    def is_highlighted(self, row: int, col: int) -> bool:
+        """
+        Check if a cell should be highlighted based on the selected cell.
+        A cell is highlighted if it shares the same row, column, or 3×3 box
+        as the selected cell.
+        """
+        if self.selected_cell is None:
+            return False
+        sel_row, sel_col = self.selected_cell
+        if row == sel_row or col == sel_col:
+            return True
+        if row // 3 == sel_row // 3 and col // 3 == sel_col // 3:
+            return True
+        return False
+
     def draw_cell(self, surface: pygame.Surface, row: int, col: int):
         """Draw a single Sudoku cell with styling"""
         rect = self.get_cell_rect(row, col)
@@ -223,6 +238,9 @@ class SudokuUI:
             glow = True
         elif (row, col) == self.hover_cell:
             cell_color = ui_config.COLOR_CELL_HOVER
+            glow = False
+        elif self.is_highlighted(row, col):
+            cell_color = ui_config.COLOR_CELL_HIGHLIGHT
             glow = False
         elif is_given:
             cell_color = ui_config.COLOR_GIVEN
