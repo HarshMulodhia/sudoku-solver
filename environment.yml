@@ -1,0 +1,15 @@
+name: sudoku-rl-solver
+channels:
+  - pytorch
+  - nvidia
+  - defaults
+dependencies:
+  - python>=3.9
+  - numpy>=1.24
+  - pytorch>=2.0
+  - pytorch-cuda=12.1
+  - tqdm>=4.66
+  - pip:
+    - pygame>=2.5
+    - pytest>=7.0
+    - flake8>=6.0

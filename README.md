@@ -1,5 +1,7 @@
 # Sudoku RL Solver - Installation & Setup Guide
 
+![CI](https://github.com/HarshMulodhia/sudoku-solver/actions/workflows/ci.yml/badge.svg)
+
 ## Prerequisites
 
 ```bash
@@ -8,14 +10,17 @@ python >= 3.9
 
 ## Installation
 
+### Option A: Conda Environment (Recommended for GPU Training)
+
 ```bash
-# Clone or create project directory
-mkdir sudoku-rl-solver && cd sudoku-rl-solver
+# Create conda environment with GPU-enabled PyTorch
+conda env create -f environment.yml
+conda activate sudoku-rl-solver
+```
 
-# Create virtual environment (recommended)
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+### Option B: pip
 
+```bash
 # Install dependencies
 pip install -r requirements.txt
 ```
@@ -24,28 +29,43 @@ pip install -r requirements.txt
 
 ```
 sudoku-rl-solver/
-├── requirements.txt           # Dependencies
+├── .github/workflows/ci.yml  # CI/CD pipeline (lint + test)
+├── environment.yml            # Conda env (GPU-enabled PyTorch)
+├── requirements.txt           # pip dependencies
 ├── config.py                  # Configuration & hyperparameters
 ├── sudoku_game.py            # Game logic & constraint handling
 ├── rl_agent.py               # DQN agent implementation
 ├── pygame_ui.py              # High-tech pygame interface
 ├── train.py                  # Training script
 ├── solver.py                 # Inference & visualization
+├── tests/                    # Test suite
+│   ├── test_config.py
+│   ├── test_sudoku_game.py
+│   └── test_rl_agent.py
 └── models/                   # Saved trained models
-    └── sudoku_dqn_model.pth
+    └── sudoku_dqn_*.pth
 ```
 
 ## Quick Start
 
 ### 1. Train the Agent (Optional)
 ```bash
-python train.py --episodes 1000 --difficulty medium
+# Train on CPU
+python train.py --episodes 1000 --difficulty medium --device cpu
+
+# Train on GPU (requires CUDA-enabled conda env)
+python train.py --episodes 1000 --difficulty medium --device cuda
 ```
 
 ### 2. Run Solver with UI
 ```bash
 python solver.py --mode play  # Manual play + solver assist
 python solver.py --mode solve # Auto-solve visualization
+```
+
+### 3. Run Tests
+```bash
+python -m pytest tests/ -v
 ```
 
 ## Features
