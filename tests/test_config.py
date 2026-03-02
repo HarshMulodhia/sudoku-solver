@@ -38,11 +38,11 @@ class TestUIConfig:
 
     def test_get_theme_dark(self):
         cfg = UIConfig(dark_mode=True)
-        assert cfg.get_theme() is DARK_THEME
+        assert cfg.get_theme() == DARK_THEME
 
     def test_get_theme_light(self):
         cfg = UIConfig(dark_mode=False)
-        assert cfg.get_theme() is LIGHT_THEME
+        assert cfg.get_theme() == LIGHT_THEME
 
 
 class TestThemeColors:

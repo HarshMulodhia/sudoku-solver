@@ -113,7 +113,7 @@ class TestToggleTheme:
         ui.colors = ui_config.get_theme()
         ui.toggle_theme()
         assert ui_config.dark_mode is False
-        assert ui.colors is LIGHT_THEME
+        assert ui.colors == LIGHT_THEME
 
     def test_toggle_switches_to_dark(self, ui):
         """Toggling from light mode should switch back to dark theme"""
@@ -121,7 +121,7 @@ class TestToggleTheme:
         ui.colors = ui_config.get_theme()
         ui.toggle_theme()
         assert ui_config.dark_mode is True
-        assert ui.colors is DARK_THEME
+        assert ui.colors == DARK_THEME
 
     def test_toggle_clears_text_cache(self, ui):
         """Toggling theme should clear the text cache"""
@@ -137,4 +137,4 @@ class TestToggleTheme:
         ui.toggle_theme()
         ui.toggle_theme()
         assert ui_config.dark_mode is True
-        assert ui.colors is original
+        assert ui.colors == original
