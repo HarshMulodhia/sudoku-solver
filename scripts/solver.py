@@ -158,6 +158,11 @@ class InteractiveSudokuSolver:
         row, col, prev_digit = self.ui.undo_stack.pop()
         self.game.board[row, col] = prev_digit
         return True
+
+    def _try_undo(self):
+        """Attempt undo and log result."""
+        if self.undo_last_move():
+            print("Move undone")
     
     def get_status(self) -> str:
         """Get current game status string"""
@@ -198,8 +203,7 @@ class InteractiveSudokuSolver:
                         self.reset_board()
                         print("Entries reset")
                     elif action == 'undo':
-                        if self.undo_last_move():
-                            print("Move undone")
+                        self._try_undo()
                     elif action in ('difficulty_easy',
                                     'difficulty_medium',
                                     'difficulty_hard'):
@@ -211,8 +215,7 @@ class InteractiveSudokuSolver:
                     # Undo (Ctrl+Z)
                     ctrl = event.mod & pygame.KMOD_CTRL
                     if event.key == pygame.K_z and ctrl:
-                        if self.undo_last_move():
-                            print("Move undone")
+                        self._try_undo()
 
                     # Number input (manual mode uses force=True)
                     elif event.key >= pygame.K_1 and event.key <= pygame.K_9:
