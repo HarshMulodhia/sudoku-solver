@@ -183,7 +183,8 @@ class InteractiveSudokuSolver:
                         if self.ui.selected_cell:
                             digit = event.key - pygame.K_0
                             row, col = self.ui.selected_cell
-                            self.place_number(row, col, digit, force=True)
+                            is_manual = self.ui.mode == 'manual'
+                            self.place_number(row, col, digit, force=is_manual)
                     
                     # Delete/Clear
                     elif event.key == pygame.K_DELETE or event.key == pygame.K_BACKSPACE:
