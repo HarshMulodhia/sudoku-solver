@@ -2,10 +2,6 @@
 
 import numpy as np
 import pytest
-import sys
-import os
-
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from sudoku_game import SudokuGame, SudokuValidator
 from config import DIFFICULTY_LEVELS
