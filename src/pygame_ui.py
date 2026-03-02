@@ -110,6 +110,9 @@ class SudokuUI:
         # Text cache for optimization
         self.text_cache = {}
         
+        # Active color theme
+        self.colors = ui_config.get_theme()
+        
         # UI State
         self.selected_cell: Optional[Tuple[int, int]] = None
         self.hover_cell: Optional[Tuple[int, int]] = None
@@ -124,11 +127,16 @@ class SudokuUI:
         self.board_x = ui_config.BOARD_X
         self.board_y = ui_config.BOARD_Y
         
-        # NEW: 3×3 box configuration
+        # NEW: 3x3 box configuration
         self.box_size = 3 * self.cell_size
         self.box_border_width = 4
-        self.box_border_color = ui_config.COLOR_BOX_BORDER
         self.box_highlight_alpha = 20  # Subtle background
+    
+    def toggle_theme(self):
+        """Toggle between dark and light mode"""
+        ui_config.dark_mode = not ui_config.dark_mode
+        self.colors = ui_config.get_theme()
+        self.text_cache.clear()
     
     def get_cell_from_pos(self, x: int, y: int) -> Optional[Tuple[int, int]]:
         """Convert pixel position to cell coordinates"""
@@ -151,7 +159,7 @@ class SudokuUI:
     
     def get_box_rect(self, box_row: int, box_col: int) -> pygame.Rect:
         """
-        Get pygame Rect for a 3×3 box
+        Get pygame Rect for a 3x3 box
         
         Args:
             box_row: Box row index (0-2)
@@ -175,7 +183,7 @@ class SudokuUI:
             particle = Particle(
                 cx, cy, vx, vy,
                 ui_config.PARTICLE_LIFETIME,
-                ui_config.COLOR_SOLVED
+                self.colors.COLOR_SOLVED
             )
             self.particles.append(particle)
     
@@ -200,21 +208,19 @@ class SudokuUI:
                 
                 # Subtle alternating background for readability
                 if (box_row + box_col) % 2 == 0:
-                    # Slightly lighter background
-                    bg_color = (40, 40, 70)  # Slightly brighter than cell default
-                    pygame.draw.rect(surface, bg_color, box_rect)
+                    pygame.draw.rect(surface, self.colors.COLOR_BOX_ALT_BG, box_rect)
         
-        # Draw thick borders around each 3×3 box
+        # Draw thick borders around each 3x3 box
         for box_row in range(3):
             for box_col in range(3):
                 box_rect = self.get_box_rect(box_row, box_col)
-                # Thick cyan border
-                pygame.draw.rect(surface, self.box_border_color, box_rect, self.box_border_width)
+                # Thick border
+                pygame.draw.rect(surface, self.colors.COLOR_BOX_BORDER, box_rect, self.box_border_width)
     
     def is_highlighted(self, row: int, col: int) -> bool:
         """
         Check if a cell should be highlighted based on the selected cell.
-        A cell is highlighted if it shares the same row, column, or 3×3 box
+        A cell is highlighted if it shares the same row, column, or 3x3 box
         as the selected cell.
         """
         if self.selected_cell is None:
@@ -234,19 +240,19 @@ class SudokuUI:
         
         # Determine cell color
         if (row, col) == self.selected_cell:
-            cell_color = ui_config.COLOR_CELL_SELECTED
+            cell_color = self.colors.COLOR_CELL_SELECTED
             glow = True
         elif (row, col) == self.hover_cell:
-            cell_color = ui_config.COLOR_CELL_HOVER
+            cell_color = self.colors.COLOR_CELL_HOVER
             glow = False
         elif self.is_highlighted(row, col):
-            cell_color = ui_config.COLOR_CELL_HIGHLIGHT
+            cell_color = self.colors.COLOR_CELL_HIGHLIGHT
             glow = False
         elif is_given:
-            cell_color = ui_config.COLOR_GIVEN
+            cell_color = self.colors.COLOR_GIVEN
             glow = False
         else:
-            cell_color = ui_config.COLOR_CELL_DEFAULT
+            cell_color = self.colors.COLOR_CELL_DEFAULT
             glow = False
         
         # Draw cell background
@@ -254,21 +260,21 @@ class SudokuUI:
         
         # Draw glow effect
         if glow:
-            pygame.draw.rect(surface, ui_config.COLOR_ACCENT, rect, 3)
+            pygame.draw.rect(surface, self.colors.COLOR_ACCENT, rect, 3)
         
         # Draw thin cell borders (grid lines)
-        pygame.draw.rect(surface, ui_config.COLOR_BORDER, rect, ui_config.BORDER_WIDTH)
+        pygame.draw.rect(surface, self.colors.COLOR_BORDER, rect, ui_config.BORDER_WIDTH)
         
         # Draw digit - always visible
         if digit != 0:
-            text_color = ui_config.COLOR_TEXT if is_given else ui_config.COLOR_SOLVED
+            text_color = self.colors.COLOR_TEXT if is_given else self.colors.COLOR_SOLVED
             text_surface = self.get_text_cached(str(digit), self.font_large, text_color)
             text_rect = text_surface.get_rect(center=rect.center)
             surface.blit(text_surface, text_rect)
     
     def draw_board(self, surface: pygame.Surface):
         """Draw entire Sudoku board with cells and boxes"""
-        # Draw 3×3 boxes FIRST (background layer)
+        # Draw 3x3 boxes FIRST (background layer)
         self.draw_3x3_boxes(surface)
         
         # Draw all cells (middle layer)
@@ -283,26 +289,31 @@ class SudokuUI:
                                  self.board_y, 300, panel_height)
         
         # Draw panel background with border
-        pygame.draw.rect(surface, ui_config.COLOR_PANEL_BG, panel_rect)
-        pygame.draw.rect(surface, ui_config.COLOR_ACCENT, panel_rect, 2)
+        pygame.draw.rect(surface, self.colors.COLOR_PANEL_BG, panel_rect)
+        pygame.draw.rect(surface, self.colors.COLOR_ACCENT, panel_rect, 2)
         
         # Title
-        title = self.get_text_cached("RL Solver", self.font_normal, ui_config.COLOR_ACCENT)
+        title = self.get_text_cached("RL Solver", self.font_normal, self.colors.COLOR_ACCENT)
         surface.blit(title, (panel_rect.x + 20, panel_rect.y + 10))
         
         # Info text
         difficulty_text = self.get_text_cached(
             f"Difficulty: {self.game.difficulty.upper()}", 
-            self.font_small, ui_config.COLOR_TEXT
+            self.font_small, self.colors.COLOR_TEXT
         )
         surface.blit(difficulty_text, (panel_rect.x + 20, panel_rect.y + 35))
         
-        fps_text = self.get_text_cached(f"FPS: {fps:.1f}", self.font_small, ui_config.COLOR_TEXT)
+        fps_text = self.get_text_cached(f"FPS: {fps:.1f}", self.font_small, self.colors.COLOR_TEXT)
         surface.blit(fps_text, (panel_rect.x + 20, panel_rect.y + 55))
         
         if status:
-            status_text = self.get_text_cached(status, self.font_small, ui_config.COLOR_SOLVED)
+            status_text = self.get_text_cached(status, self.font_small, self.colors.COLOR_SOLVED)
             surface.blit(status_text, (panel_rect.x + 20, panel_rect.y + 75))
+
+        # Theme mode indicator
+        mode_label = "Dark Mode" if ui_config.dark_mode else "Light Mode"
+        mode_text = self.get_text_cached(mode_label, self.font_small, self.colors.COLOR_TEXT)
+        surface.blit(mode_text, (panel_rect.x + 20, panel_rect.y + 95))
     
     def draw_instructions(self, surface: pygame.Surface):
         """Draw control instructions"""
@@ -311,13 +322,14 @@ class SudokuUI:
             "Click cell + type digit: Place number",
             "R: Reset board",
             "H: Get hint",
+            "T: Toggle dark/light mode",
             "SPACE: Auto-solve (RL Agent)",
             "Q: Quit"
         ]
         
         y_offset = self.board_y + 9 * self.cell_size + 30
         for i, instruction in enumerate(instructions):
-            color = ui_config.COLOR_ACCENT if i == 0 else ui_config.COLOR_TEXT
+            color = self.colors.COLOR_ACCENT if i == 0 else self.colors.COLOR_TEXT
             text = self.get_text_cached(instruction, self.font_small, color)
             surface.blit(text, (self.board_x, y_offset + i * 20))
     
@@ -336,9 +348,9 @@ class SudokuUI:
     def draw(self, surface: pygame.Surface, fps: float = 60, status: str = ""):
         """Draw entire UI"""
         # Clear screen
-        surface.fill(ui_config.COLOR_BG)
+        surface.fill(self.colors.COLOR_BG)
         
-        # Draw board (with 3×3 boxes)
+        # Draw board (with 3x3 boxes)
         self.draw_board(surface)
         
         # Draw particles
@@ -371,19 +383,19 @@ class SudokuUI:
         # Glow around selected cell
         if self.selected_cell:
             r, c = self.selected_cell
-            self.draw_glow_rect(self.get_cell_rect(r, c), ui_config.COLOR_ACCENT, strength=200)
+            self.draw_glow_rect(self.get_cell_rect(r, c), self.colors.COLOR_ACCENT, strength=200)
 
         # Subtle hover glow
         if self.hover_cell:
             r, c = self.hover_cell
-            self.draw_glow_rect(self.get_cell_rect(r, c), ui_config.COLOR_BOX_BORDER, strength=120, rings=3)
+            self.draw_glow_rect(self.get_cell_rect(r, c), self.colors.COLOR_BOX_BORDER, strength=120, rings=3)
 
-        # Optional: glow the whole 3×3 box you’re in
+        # Optional: glow the whole 3x3 box you're in
         cell = self.hover_cell or self.selected_cell
         if cell:
             br, bc = cell[0] // 3, cell[1] // 3
             box_rect = self.get_box_rect(br, bc)
-            self.draw_glow_rect(box_rect, ui_config.COLOR_BOX_BORDER, strength=90, rings=2)
+            self.draw_glow_rect(box_rect, self.colors.COLOR_BOX_BORDER, strength=90, rings=2)
     
     def handle_mouse_motion(self, pos: Tuple[int, int]):
         """Handle mouse motion"""

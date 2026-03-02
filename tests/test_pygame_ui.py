@@ -1,4 +1,4 @@
-"""Tests for pygame_ui highlighting logic"""
+"""Tests for pygame_ui highlighting and theme logic"""
 
 import pytest
 import sys
@@ -10,6 +10,7 @@ sys.modules['pygame'] = MagicMock()
 sys.modules['pygame.font'] = MagicMock()
 sys.modules['pygame.display'] = MagicMock()
 
+from config import ui_config, DARK_THEME, LIGHT_THEME
 from sudoku_game import SudokuGame
 from pygame_ui import SudokuUI
 
@@ -23,6 +24,8 @@ def ui():
         ui.game = game
         ui.selected_cell = None
         ui.hover_cell = None
+        ui.colors = ui_config.get_theme()
+        ui.text_cache = {}
     return ui
 
 
@@ -99,3 +102,39 @@ class TestIsHighlighted:
         assert ui.is_highlighted(7, 7) is True
         # Not related
         assert ui.is_highlighted(4, 4) is False
+
+
+class TestToggleTheme:
+    """Tests for the toggle_theme method"""
+
+    def test_toggle_switches_to_light(self, ui):
+        """Toggling from dark mode should switch to light theme"""
+        ui_config.dark_mode = True
+        ui.colors = ui_config.get_theme()
+        ui.toggle_theme()
+        assert ui_config.dark_mode is False
+        assert ui.colors is LIGHT_THEME
+
+    def test_toggle_switches_to_dark(self, ui):
+        """Toggling from light mode should switch back to dark theme"""
+        ui_config.dark_mode = False
+        ui.colors = ui_config.get_theme()
+        ui.toggle_theme()
+        assert ui_config.dark_mode is True
+        assert ui.colors is DARK_THEME
+
+    def test_toggle_clears_text_cache(self, ui):
+        """Toggling theme should clear the text cache"""
+        ui.text_cache = {"some_key": "some_value"}
+        ui_config.dark_mode = True
+        ui.toggle_theme()
+        assert ui.text_cache == {}
+
+    def test_double_toggle_restores_theme(self, ui):
+        """Toggling twice should restore the original theme"""
+        ui_config.dark_mode = True
+        original = ui_config.get_theme()
+        ui.toggle_theme()
+        ui.toggle_theme()
+        assert ui_config.dark_mode is True
+        assert ui.colors is original

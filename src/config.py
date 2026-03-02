@@ -37,6 +37,58 @@ class RLConfig:
             self.HIDDEN_LAYERS = [256, 256, 128]
 
 @dataclass
+class ThemeColors:
+    """Color palette for a UI theme"""
+    COLOR_BG: Tuple[int, ...]
+    COLOR_CELL_DEFAULT: Tuple[int, ...]
+    COLOR_GIVEN: Tuple[int, ...]
+    COLOR_CELL_HOVER: Tuple[int, ...]
+    COLOR_CELL_SELECTED: Tuple[int, ...]
+    COLOR_SOLVED: Tuple[int, ...]
+    COLOR_INVALID: Tuple[int, ...]
+    COLOR_BORDER: Tuple[int, ...]
+    COLOR_ACCENT: Tuple[int, ...]
+    COLOR_TEXT: Tuple[int, ...]
+    COLOR_PANEL_BG: Tuple[int, ...]
+    COLOR_BOX_BORDER: Tuple[int, ...]
+    COLOR_CELL_HIGHLIGHT: Tuple[int, ...]
+    COLOR_BOX_ALT_BG: Tuple[int, ...]
+
+DARK_THEME = ThemeColors(
+    COLOR_BG              = (12, 14, 28),
+    COLOR_CELL_DEFAULT    = (18, 22, 42),
+    COLOR_GIVEN           = (24, 30, 55),
+    COLOR_CELL_HOVER      = (30, 50, 90),
+    COLOR_CELL_SELECTED   = (0, 200, 255),
+    COLOR_SOLVED          = (80, 230, 255),
+    COLOR_INVALID         = (255, 70, 120),
+    COLOR_BORDER          = (45, 100, 180),
+    COLOR_ACCENT          = (0, 220, 255),
+    COLOR_TEXT            = (200, 215, 240),
+    COLOR_PANEL_BG        = (15, 20, 38),
+    COLOR_BOX_BORDER      = (0, 150, 255),
+    COLOR_CELL_HIGHLIGHT  = (25, 45, 90),
+    COLOR_BOX_ALT_BG      = (22, 28, 50),
+)
+
+LIGHT_THEME = ThemeColors(
+    COLOR_BG              = (245, 247, 252),
+    COLOR_CELL_DEFAULT    = (255, 255, 255),
+    COLOR_GIVEN           = (232, 238, 248),
+    COLOR_CELL_HOVER      = (210, 225, 250),
+    COLOR_CELL_SELECTED   = (50, 110, 220),
+    COLOR_SOLVED          = (30, 90, 195),
+    COLOR_INVALID         = (220, 55, 55),
+    COLOR_BORDER          = (175, 190, 215),
+    COLOR_ACCENT          = (40, 95, 200),
+    COLOR_TEXT            = (25, 30, 45),
+    COLOR_PANEL_BG        = (238, 242, 250),
+    COLOR_BOX_BORDER      = (35, 75, 160),
+    COLOR_CELL_HIGHLIGHT  = (205, 220, 245),
+    COLOR_BOX_ALT_BG      = (240, 243, 250),
+)
+
+@dataclass
 class UIConfig:
     """Pygame UI settings"""
     # Window
@@ -51,20 +103,8 @@ class UIConfig:
     BORDER_WIDTH: int = 2
     SUBGRID_BORDER_WIDTH: int = 4
     
-    # Colors (Blue–Cyan AI Dashboard)
-    COLOR_BG : Tuple[int, ...]              = (8, 12, 20)     # overall background (very dark)
-    COLOR_CELL_DEFAULT : Tuple[int, ...]    = (10, 16, 28)    # empty cells (darkest surface)
-    COLOR_GIVEN : Tuple[int, ...]           = (14, 22, 38)    # given cells (still dark, slightly lifted)
-    COLOR_CELL_HOVER : Tuple[int, ...]      = (18, 38, 66)    # hover surface
-    COLOR_CELL_SELECTED : Tuple[int, ...]   = (0, 220, 255)   # selection accent (bright cyan)
-    COLOR_SOLVED : Tuple[int, ...]          = (80, 244, 255)  # user/agent digits (cyan)
-    COLOR_INVALID : Tuple[int, ...]         = (255, 77, 166)  # error (kept visible vs blue theme)
-    COLOR_BORDER : Tuple[int, ...]          = (33, 120, 210)  # thin grid lines (blue)
-    COLOR_ACCENT : Tuple[int, ...]          = (0, 235, 255)   # HUD accent cyan (panels/outlines)
-    COLOR_TEXT : Tuple[int, ...]            = (214, 226, 245) # off-white (panel text)
-    COLOR_PANEL_BG : Tuple[int, ...]        = (12, 18, 30)    # info panel background
-    COLOR_BOX_BORDER : Tuple[int, ...]      = (0, 180, 255)   # 3×3 box outline
-    COLOR_CELL_HIGHLIGHT : Tuple[int, ...]  = (20, 40, 80)    # row/col/box highlight
+    # Theme mode (True = dark, False = light)
+    dark_mode: bool = True
     
     # Animations
     ANIMATION_DURATION: int = 300  # ms
@@ -73,6 +113,10 @@ class UIConfig:
     # Font
     FONT_SIZE_CELL: int = 36
     FONT_SIZE_BUTTON: int = 14
+    
+    def get_theme(self) -> ThemeColors:
+        """Return the active color theme based on dark_mode flag"""
+        return DARK_THEME if self.dark_mode else LIGHT_THEME
 
 @dataclass
 class RewardConfig:

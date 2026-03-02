@@ -1,6 +1,9 @@
 """Tests for config module."""
 
-from config import GameConfig, RLConfig, UIConfig, RewardConfig, DIFFICULTY_LEVELS
+from config import (
+    GameConfig, RLConfig, UIConfig, RewardConfig,
+    ThemeColors, DARK_THEME, LIGHT_THEME, DIFFICULTY_LEVELS
+)
 
 
 class TestGameConfig:
@@ -28,6 +31,35 @@ class TestUIConfig:
         assert cfg.WINDOW_WIDTH == 1200
         assert cfg.WINDOW_HEIGHT == 900
         assert cfg.FPS == 60
+
+    def test_dark_mode_default(self):
+        cfg = UIConfig()
+        assert cfg.dark_mode is True
+
+    def test_get_theme_dark(self):
+        cfg = UIConfig(dark_mode=True)
+        assert cfg.get_theme() is DARK_THEME
+
+    def test_get_theme_light(self):
+        cfg = UIConfig(dark_mode=False)
+        assert cfg.get_theme() is LIGHT_THEME
+
+
+class TestThemeColors:
+    def test_dark_theme_has_all_colors(self):
+        assert isinstance(DARK_THEME.COLOR_BG, tuple)
+        assert isinstance(DARK_THEME.COLOR_CELL_DEFAULT, tuple)
+        assert isinstance(DARK_THEME.COLOR_BOX_ALT_BG, tuple)
+
+    def test_light_theme_has_all_colors(self):
+        assert isinstance(LIGHT_THEME.COLOR_BG, tuple)
+        assert isinstance(LIGHT_THEME.COLOR_CELL_DEFAULT, tuple)
+        assert isinstance(LIGHT_THEME.COLOR_BOX_ALT_BG, tuple)
+
+    def test_themes_differ(self):
+        assert DARK_THEME.COLOR_BG != LIGHT_THEME.COLOR_BG
+        assert DARK_THEME.COLOR_CELL_DEFAULT != LIGHT_THEME.COLOR_CELL_DEFAULT
+        assert DARK_THEME.COLOR_TEXT != LIGHT_THEME.COLOR_TEXT
 
 
 class TestRewardConfig:
