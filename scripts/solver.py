@@ -56,8 +56,10 @@ class InteractiveSudokuSolver:
     
     def place_number(self, row: int, col: int, digit: int,
                      force: bool = False) -> bool:
-        """Place a number on the board"""
+        """Place a number on the board and record undo history"""
+        previous = int(self.game.board[row, col])
         if self.game.place_digit(row, col, digit, force=force):
+            self.ui.undo_stack.append((row, col, previous))
             self.ui.emit_particles(row, col, 8)
             return True
         return False
@@ -127,6 +129,7 @@ class InteractiveSudokuSolver:
         self.solve_steps_list = []
         self.last_solved_cell = None
         self.ui.selected_cell = None
+        self.ui.undo_stack.clear()
 
     def new_puzzle(self):
         """Generate a completely new puzzle"""
@@ -136,7 +139,25 @@ class InteractiveSudokuSolver:
         self.solve_steps_list = []
         self.last_solved_cell = None
         self.ui.selected_cell = None
+        self.ui.undo_stack.clear()
         self.ui.reset_timer()
+
+    def change_difficulty(self, difficulty: str):
+        """Change difficulty and generate a new puzzle"""
+        self.difficulty = difficulty
+        self.new_puzzle()
+
+    def undo_last_move(self) -> bool:
+        """Undo the last digit placement.
+
+        Returns:
+            True if a move was undone, False if nothing to undo.
+        """
+        if not self.ui.undo_stack:
+            return False
+        row, col, prev_digit = self.ui.undo_stack.pop()
+        self.game.board[row, col] = prev_digit
+        return True
     
     def get_status(self) -> str:
         """Get current game status string"""
@@ -176,10 +197,25 @@ class InteractiveSudokuSolver:
                     elif action == 'reset_entries':
                         self.reset_board()
                         print("Entries reset")
+                    elif action == 'undo':
+                        if self.undo_last_move():
+                            print("Move undone")
+                    elif action in ('difficulty_easy',
+                                    'difficulty_medium',
+                                    'difficulty_hard'):
+                        diff = action.split('_')[1]
+                        self.change_difficulty(diff)
+                        print(f"Difficulty changed to {diff}")
                 
                 elif event.type == pygame.KEYDOWN:
+                    # Undo (Ctrl+Z)
+                    ctrl = event.mod & pygame.KMOD_CTRL
+                    if event.key == pygame.K_z and ctrl:
+                        if self.undo_last_move():
+                            print("Move undone")
+
                     # Number input (manual mode uses force=True)
-                    if event.key >= pygame.K_1 and event.key <= pygame.K_9:
+                    elif event.key >= pygame.K_1 and event.key <= pygame.K_9:
                         if self.ui.selected_cell:
                             digit = event.key - pygame.K_0
                             row, col = self.ui.selected_cell

@@ -178,6 +178,9 @@ class SudokuUI:
         self.start_time = _time.time()
         self.score = 0
 
+        # Undo stack: list of (row, col, previous_digit) tuples
+        self.undo_stack = []
+
         # Create buttons
         self._init_buttons()
 
@@ -193,6 +196,21 @@ class SudokuUI:
         self.btn_theme = Button(panel_x, y, btn_w * 2 + gap, btn_h,
                                 "Toggle Dark/Light")
 
+        # Difficulty buttons
+        y += btn_h + 20
+        third_w = (btn_w * 2 + gap - 2 * gap) // 3
+        self.btn_easy = Button(panel_x, y, third_w, btn_h,
+                               "Easy",
+                               active=(self.game.difficulty == 'easy'))
+        self.btn_medium = Button(
+            panel_x + third_w + gap, y, third_w, btn_h,
+            "Medium",
+            active=(self.game.difficulty == 'medium'))
+        self.btn_hard = Button(
+            panel_x + 2 * (third_w + gap), y, third_w, btn_h,
+            "Hard",
+            active=(self.game.difficulty == 'hard'))
+
         # Mode buttons
         y += btn_h + 20
         self.btn_manual = Button(panel_x, y, btn_w, btn_h,
@@ -203,20 +221,27 @@ class SudokuUI:
         self.btn_backtrack = Button(panel_x, y, btn_w * 2 + gap, btn_h,
                                     "Backtracking Solver")
 
-        # Reset buttons
+        # Reset / undo buttons
         y += btn_h + 20
         self.btn_new_puzzle = Button(panel_x, y, btn_w, btn_h,
                                      "New Puzzle")
         self.btn_reset_entries = Button(panel_x + btn_w + gap, y, btn_w, btn_h,
                                         "Reset Entries")
+        y += btn_h + gap
+        self.btn_undo = Button(panel_x, y, btn_w * 2 + gap, btn_h,
+                               "Undo (Ctrl+Z)")
 
         self.buttons = [
             self.btn_theme,
+            self.btn_easy, self.btn_medium, self.btn_hard,
             self.btn_manual, self.btn_rl, self.btn_backtrack,
             self.btn_new_puzzle, self.btn_reset_entries,
+            self.btn_undo,
         ]
 
         self.mode_buttons = [self.btn_manual, self.btn_rl, self.btn_backtrack]
+        self.difficulty_buttons = [self.btn_easy, self.btn_medium,
+                                   self.btn_hard]
     
     def set_mode(self, mode: str):
         """Set the active solver mode"""
@@ -229,6 +254,17 @@ class SudokuUI:
             self.btn_rl.active = True
         elif mode == 'backtracking':
             self.btn_backtrack.active = True
+
+    def set_difficulty(self, difficulty: str):
+        """Set the active difficulty and update button states"""
+        for btn in self.difficulty_buttons:
+            btn.active = False
+        if difficulty == 'easy':
+            self.btn_easy.active = True
+        elif difficulty == 'medium':
+            self.btn_medium.active = True
+        elif difficulty == 'hard':
+            self.btn_hard.active = True
 
     def reset_timer(self):
         """Reset the game timer"""
@@ -353,6 +389,19 @@ class SudokuUI:
             return True
         return False
 
+    def is_digit_highlighted(self, row: int, col: int) -> bool:
+        """
+        Check if a cell should be highlighted because it contains the
+        same digit as the currently selected cell.
+        """
+        if self.selected_cell is None:
+            return False
+        sel_row, sel_col = self.selected_cell
+        sel_digit = self.game.board[sel_row, sel_col]
+        if sel_digit == 0:
+            return False
+        return self.game.board[row, col] == sel_digit
+
     def draw_cell(self, surface: pygame.Surface, row: int, col: int):
         """Draw a single Sudoku cell with styling"""
         rect = self.get_cell_rect(row, col)
@@ -365,6 +414,9 @@ class SudokuUI:
             glow = True
         elif (row, col) == self.hover_cell:
             cell_color = self.colors.COLOR_CELL_HOVER
+            glow = False
+        elif self.is_digit_highlighted(row, col):
+            cell_color = self.colors.COLOR_CELL_HIGHLIGHT
             glow = False
         elif self.is_highlighted(row, col):
             cell_color = self.colors.COLOR_CELL_HIGHLIGHT
@@ -455,6 +507,7 @@ class SudokuUI:
             "CONTROLS:",
             "Click cell + type digit: Place number",
             "Delete/Backspace: Clear cell",
+            "Ctrl+Z: Undo last move",
             "H: Get hint   Q: Quit",
             "SPACE: Run active solver",
         ]
@@ -548,6 +601,15 @@ class SudokuUI:
         if self.btn_theme.is_clicked(pos):
             self.toggle_theme()
             return 'toggle_theme'
+        if self.btn_easy.is_clicked(pos):
+            self.set_difficulty('easy')
+            return 'difficulty_easy'
+        if self.btn_medium.is_clicked(pos):
+            self.set_difficulty('medium')
+            return 'difficulty_medium'
+        if self.btn_hard.is_clicked(pos):
+            self.set_difficulty('hard')
+            return 'difficulty_hard'
         if self.btn_manual.is_clicked(pos):
             self.set_mode('manual')
             return 'mode_manual'
@@ -561,6 +623,8 @@ class SudokuUI:
             return 'new_puzzle'
         if self.btn_reset_entries.is_clicked(pos):
             return 'reset_entries'
+        if self.btn_undo.is_clicked(pos):
+            return 'undo'
 
         # Otherwise select a cell on the board
         cell = self.get_cell_from_pos(pos[0], pos[1])
