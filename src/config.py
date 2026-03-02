@@ -123,11 +123,13 @@ class RewardConfig:
     """Reward shaping settings"""
     VALID_MOVE_REWARD: float = 10.0
     INVALID_MOVE_PENALTY: float = -5.0
-    COMPLETION_REWARD: float = 100.0
+    COMPLETION_REWARD: float = 500.0
     ROW_CONFLICT_PENALTY: float = -1.0
     COL_CONFLICT_PENALTY: float = -1.0
     BOX_CONFLICT_PENALTY: float = -1.0
     DUPLICATE_PENALTY: float = -10.0
+    CORRECT_MOVE_REWARD: float = 15.0
+    WRONG_MOVE_PENALTY: float = -3.0
 
 # Instantiate configs
 game_config = GameConfig()

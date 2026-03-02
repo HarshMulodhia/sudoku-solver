@@ -14,6 +14,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
 from config import ui_config
 from sudoku_game import SudokuGame
 from rl_agent import SudokuRLAgent
+from backtracking_solver import BacktrackingSolver
 from pygame_ui import SudokuUI
 
 class InteractiveSudokuSolver:
@@ -34,7 +35,7 @@ class InteractiveSudokuSolver:
         self.mode = mode
         self.difficulty = difficulty
         
-        # Initialize agent
+        # Initialize RL agent
         device = 'cuda' if torch.cuda.is_available() else 'cpu'
         self.agent = SudokuRLAgent(device=device)
         
@@ -44,15 +45,19 @@ class InteractiveSudokuSolver:
             self.agent.load_model(model_path)
         else:
             print("No trained model found. Using untrained network.")
+
+        # Backtracking solver
+        self.bt_solver = BacktrackingSolver()
         
         # Solver state
         self.solving = False
         self.solve_steps_list = []
         self.last_solved_cell = None
     
-    def place_number(self, row: int, col: int, digit: int) -> bool:
+    def place_number(self, row: int, col: int, digit: int,
+                     force: bool = False) -> bool:
         """Place a number on the board"""
-        if self.game.place_digit(row, col, digit):
+        if self.game.place_digit(row, col, digit, force=force):
             self.ui.emit_particles(row, col, 8)
             return True
         return False
@@ -99,27 +104,46 @@ class InteractiveSudokuSolver:
         
         return True
     
-    def auto_solve(self):
-        """Automatically solve puzzle"""
+    def auto_solve_rl(self):
+        """Automatically solve puzzle with RL agent"""
         self.solving = True
         self.solve_steps_list = []
         
         while not self.game.is_complete():
             if not self.execute_solve_step():
                 break
+
+    def auto_solve_backtracking(self):
+        """Automatically solve puzzle with backtracking solver"""
+        self.solving = True
+        self.solve_steps_list = []
+        solver = BacktrackingSolver()
+        solver.solve(self.game)
     
     def reset_board(self):
-        """Reset board to original state"""
+        """Reset board to original state (clears manual/solver entries)"""
         self.game.reset()
         self.solving = False
         self.solve_steps_list = []
         self.last_solved_cell = None
         self.ui.selected_cell = None
+
+    def new_puzzle(self):
+        """Generate a completely new puzzle"""
+        self.game = SudokuGame(difficulty=self.difficulty)
+        self.ui.game = self.game
+        self.solving = False
+        self.solve_steps_list = []
+        self.last_solved_cell = None
+        self.ui.selected_cell = None
+        self.ui.reset_timer()
     
     def get_status(self) -> str:
         """Get current game status string"""
         if self.game.is_complete():
-            return "✓ SOLVED"
+            if self.game.is_solved():
+                return "✓ SOLVED"
+            return "Complete but has errors"
         
         filled = np.sum(self.game.board > 0)
         total = 81
@@ -131,9 +155,9 @@ class InteractiveSudokuSolver:
         auto_solving = False
         frame_count = 0
         
-        print(f"\nSudoku RL Solver - {self.difficulty.upper()} mode")
-        print("Press SPACE to start auto-solve with RL agent")
-        print("Press H for hints, R to reset, Q to quit\n")
+        print(f"\nSudoku Solver - {self.difficulty.upper()} mode")
+        print("Use buttons to switch mode and theme")
+        print("Press SPACE to run the active solver, H for hints, Q to quit\n")
         
         while running:
             # Handle events
@@ -145,26 +169,28 @@ class InteractiveSudokuSolver:
                     self.ui.handle_mouse_motion(event.pos)
                 
                 elif event.type == pygame.MOUSEBUTTONDOWN:
-                    self.ui.handle_mouse_click(event.pos)
+                    action = self.ui.handle_mouse_click(event.pos)
+                    if action == 'new_puzzle':
+                        self.new_puzzle()
+                        print("New puzzle generated")
+                    elif action == 'reset_entries':
+                        self.reset_board()
+                        print("Entries reset")
                 
                 elif event.type == pygame.KEYDOWN:
-                    # Number input
+                    # Number input (manual mode uses force=True)
                     if event.key >= pygame.K_1 and event.key <= pygame.K_9:
                         if self.ui.selected_cell:
                             digit = event.key - pygame.K_0
                             row, col = self.ui.selected_cell
-                            self.place_number(row, col, digit)
+                            is_manual = self.ui.mode == 'manual'
+                            self.place_number(row, col, digit, force=is_manual)
                     
                     # Delete/Clear
                     elif event.key == pygame.K_DELETE or event.key == pygame.K_BACKSPACE:
                         if self.ui.selected_cell:
                             row, col = self.ui.selected_cell
                             self.place_number(row, col, 0)
-                    
-                    # Reset
-                    elif event.key == pygame.K_r:
-                        self.reset_board()
-                        print("Board reset")
                     
                     # Hint
                     elif event.key == pygame.K_h:
@@ -175,19 +201,24 @@ class InteractiveSudokuSolver:
                                 self.place_number(row, col, hint)
                                 print(f"Hint: Place {hint} at ({row}, {col})")
                     
-                    # Toggle theme
-                    elif event.key == pygame.K_t:
-                        self.ui.toggle_theme()
-                    
-                    # Auto-solve
+                    # Auto-solve with active mode
                     elif event.key == pygame.K_SPACE:
                         if not auto_solving:
-                            auto_solving = True
-                            print("Starting RL auto-solve...")
-                            self.auto_solve()
-                            auto_solving = False
-                            if self.game.is_complete():
-                                print(f"✓ Puzzle solved in {len(self.solve_steps_list)} steps!")
+                            active_mode = self.ui.mode
+                            if active_mode == 'rl':
+                                auto_solving = True
+                                print("Starting RL auto-solve...")
+                                self.auto_solve_rl()
+                                auto_solving = False
+                                if self.game.is_complete():
+                                    print(f"✓ Puzzle solved in {len(self.solve_steps_list)} steps!")
+                            elif active_mode == 'backtracking':
+                                auto_solving = True
+                                print("Starting backtracking solve...")
+                                self.auto_solve_backtracking()
+                                auto_solving = False
+                                if self.game.is_complete():
+                                    print("✓ Puzzle solved with backtracking!")
                     
                     # Quit
                     elif event.key == pygame.K_q:

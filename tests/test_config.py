@@ -71,6 +71,18 @@ class TestRewardConfig:
         cfg = RewardConfig()
         assert cfg.INVALID_MOVE_PENALTY < 0
 
+    def test_correct_move_reward_positive(self):
+        cfg = RewardConfig()
+        assert cfg.CORRECT_MOVE_REWARD > 0
+
+    def test_wrong_move_penalty_negative(self):
+        cfg = RewardConfig()
+        assert cfg.WRONG_MOVE_PENALTY < 0
+
+    def test_completion_reward_positive(self):
+        cfg = RewardConfig()
+        assert cfg.COMPLETION_REWARD > 0
+
 
 class TestDifficultyLevels:
     def test_all_difficulties_present(self):

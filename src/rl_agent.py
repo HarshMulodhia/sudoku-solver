@@ -216,17 +216,22 @@ class SudokuRLAgent:
         Returns:
             Reward value
         """
-        reward = 0.0
-        
         if not was_valid:
             return reward_config.INVALID_MOVE_PENALTY
-        
-        reward += reward_config.VALID_MOVE_REWARD
-        
+
+        reward = reward_config.VALID_MOVE_REWARD
+        row, col = cell
+
+        # Bonus for correct digit matching solution
+        if game.solution[row, col] == digit:
+            reward += reward_config.CORRECT_MOVE_REWARD
+        else:
+            reward += reward_config.WRONG_MOVE_PENALTY
+
         # Bonus for completion
-        if game.is_complete():
+        if game.is_complete() and game.is_solved():
             reward += reward_config.COMPLETION_REWARD
-        
+
         # Check for conflicts
         conflicts = game.get_conflicts()
         if cell in conflicts:
