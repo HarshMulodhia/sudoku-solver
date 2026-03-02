@@ -1,4 +1,4 @@
-name: sudoku-rl-solver
+name: sudoku-solver
 channels:
   - pytorch
   - nvidia
