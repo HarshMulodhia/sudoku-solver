@@ -1,0 +1,11 @@
+[flake8]
+max-line-length = 120
+# Ignore style issues in existing codebase:
+# E203, E221, E241, E251, E261: whitespace/alignment style
+# E226: missing whitespace around arithmetic operator
+# E128: continuation line indentation
+# E302, E303, E305: blank line conventions
+# W291, W293, W503: whitespace warnings
+# F401: unused import (existing code)
+# E402: module-level import not at top (scripts use sys.path setup)
+ignore = E501,W503,E303,E302,W291,E261,E241,E251,W293,E203,E221,E226,E128,E305,F401,E402

@@ -28,7 +28,7 @@ Your Sudoku RL solver is structured as a **modular, production-ready system** co
 
 ---
 
-## 1. Game Engine (sudoku_game.py)
+## 1. Game Engine (src/sudoku_game.py)
 
 ### Core Responsibilities
 
@@ -77,7 +77,47 @@ Converts board to 9×9×10 tensor for neural network:
 
 ---
 
-## 2. Reinforcement Learning Agent (rl_agent.py)
+## 1b. Deterministic Backtracking Solver (src/backtracking_solver.py)
+
+### Algorithm
+
+The `BacktrackingSolver` combines two techniques:
+
+1. **Constraint Propagation (Naked Singles)** – iteratively fills any cell
+   that has exactly one valid candidate.  This alone solves many easy puzzles
+   without any search.
+
+2. **Recursive Backtracking with MRV** – when propagation stalls, the solver
+   picks the empty cell with the *fewest* remaining candidates (Minimum
+   Remaining Values heuristic), tries each candidate in order, and recurses.
+   If a contradiction is found the solver backtracks.
+
+```
+propagate() ──▶ all cells filled? ──▶ ✅ solved
+     │ no
+     ▼
+pick MRV cell
+  for each candidate:
+     place digit → propagate → recurse
+     if fail → backtrack
+```
+
+### Performance
+
+| Difficulty | Typical Solve Time | Success Rate |
+|------------|-------------------|--------------|
+| Easy       | < 1 ms            | 100 %        |
+| Medium     | 1–3 ms            | 100 %        |
+| Hard       | 2–5 ms            | 100 %        |
+
+### Comparison with RL
+
+See `notebooks/solver_comparison.ipynb` for a detailed benchmark comparing
+the backtracking solver against the RL (DQN) agent.
+
+---
+
+## 2. Reinforcement Learning Agent (src/rl_agent.py)
 
 ### Deep Q-Network (DQN)
 
@@ -171,7 +211,7 @@ action_idx = (cell_idx * 9) + (digit - 1)
 
 ---
 
-## 3. User Interface (pygame_ui.py)
+## 3. User Interface (src/pygame_ui.py)
 
 ### Design Philosophy
 
@@ -241,7 +281,7 @@ class AnimationState:
 
 ---
 
-## 4. Training Pipeline (train.py)
+## 4. Training Pipeline (scripts/train.py)
 
 ### Workflow
 
@@ -285,7 +325,7 @@ Tracked per 50 episodes:
 
 ---
 
-## 5. Interactive Solver (solver.py)
+## 5. Interactive Solver (scripts/solver.py)
 
 ### Game Modes
 
@@ -313,7 +353,7 @@ Tracked per 50 episodes:
 
 ---
 
-## 6. Configuration System (config.py)
+## 6. Configuration System (src/config.py)
 
 ### Customizable Parameters
 
@@ -352,16 +392,11 @@ COLOR_THEME = "cyberpunk"
 ### Setup (Linux/macOS)
 
 ```bash
-# Create project directory
-mkdir sudoku-rl-solver && cd sudoku-rl-solver
+# Option A: Conda (recommended for GPU training)
+conda env create -f environment.yml
+conda activate sudoku-rl-solver
 
-# Clone files from provided modules
-
-# Create virtual environment
-python3.9 -m venv venv
-source venv/bin/activate
-
-# Install dependencies
+# Option B: pip (CPU only)
 pip install -r requirements.txt
 ```
 
@@ -369,10 +404,10 @@ pip install -r requirements.txt
 
 ```bash
 # Train on medium difficulty
-python train.py --episodes 1000 --difficulty medium
+python scripts/train.py --episodes 1000 --difficulty medium
 
 # Train on hard difficulty with GPU
-python train.py --episodes 2000 --difficulty hard --device cuda
+python scripts/train.py --episodes 2000 --difficulty hard --device cuda
 ```
 
 This generates: `models/sudoku_dqn_medium.pth`
@@ -381,13 +416,13 @@ This generates: `models/sudoku_dqn_medium.pth`
 
 ```bash
 # Play with medium difficulty
-python solver.py --difficulty medium
+python scripts/solver.py --difficulty medium
 
 # Auto-demo with trained model
-python solver.py --difficulty easy --mode solve
+python scripts/solver.py --difficulty easy --mode solve
 
 # Use custom model
-python solver.py --model path/to/model.pth
+python scripts/solver.py --model path/to/model.pth
 ```
 
 ---
