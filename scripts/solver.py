@@ -5,7 +5,11 @@ import pygame
 import numpy as np
 import torch
 import os
+import sys
 from typing import Optional
+
+# Allow running directly: add src/ to path
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
 
 from config import ui_config
 from sudoku_game import SudokuGame

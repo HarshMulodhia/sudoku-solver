@@ -7,4 +7,5 @@ max-line-length = 120
 # E302, E303, E305: blank line conventions
 # W291, W293, W503: whitespace warnings
 # F401: unused import (existing code)
-ignore = E501,W503,E303,E302,W291,E261,E241,E251,W293,E203,E221,E226,E128,E305,F401
+# E402: module-level import not at top (scripts use sys.path setup)
+ignore = E501,W503,E303,E302,W291,E261,E241,E251,W293,E203,E221,E226,E128,E305,F401,E402
