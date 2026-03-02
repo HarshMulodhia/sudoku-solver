@@ -120,7 +120,6 @@ class BacktrackingSolver:
 
     def _solve(self, board: np.ndarray) -> bool:
         """Recursive backtracking with constraint propagation."""
-        # Save a snapshot so we can restore on backtrack
         snapshot = board.copy()
 
         if not self._propagate(board):
@@ -138,14 +137,13 @@ class BacktrackingSolver:
         row, col, candidates = cell
         for digit in sorted(candidates):
             self.steps += 1
-            board_copy = board.copy()
+            board_snapshot = board.copy()
             board[row, col] = digit
 
             if self._solve(board):
                 return True
 
             self.backtracks += 1
-            np.copyto(board, board_copy)
+            np.copyto(board, board_snapshot)
 
-        np.copyto(board, snapshot)
         return False
