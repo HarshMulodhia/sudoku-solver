@@ -106,10 +106,14 @@ class TestSudokuRLAgent:
         a2 = agent.select_action(state, valid_actions, training=False)
         assert a1 == a2
 
-    def test_compute_reward_valid(self):
+    def test_compute_reward_valid_correct(self):
         agent = SudokuRLAgent(device="cpu")
         game = SudokuGame("easy")
-        reward = agent.compute_reward(game, (0, 0), 1, True)
+        # Find an empty cell and use the correct digit
+        empty = np.argwhere(game.board == 0)[0]
+        row, col = int(empty[0]), int(empty[1])
+        correct_digit = int(game.solution[row, col])
+        reward = agent.compute_reward(game, (row, col), correct_digit, True)
         assert reward > 0
 
     def test_compute_reward_invalid(self):
@@ -130,6 +134,27 @@ class TestSudokuRLAgent:
         correct_reward = agent.compute_reward(game, (row, col), correct_digit, True)
         wrong_reward = agent.compute_reward(game, (row, col), wrong_digit, True)
         assert correct_reward > wrong_reward
+
+    def test_wrong_valid_move_negative_reward(self):
+        """A valid move with the wrong digit should get negative reward."""
+        agent = SudokuRLAgent(device="cpu")
+        game = SudokuGame("easy")
+        empty = np.argwhere(game.board == 0)[0]
+        row, col = int(empty[0]), int(empty[1])
+        correct_digit = int(game.solution[row, col])
+        wrong_digit = (correct_digit % 9) + 1
+        reward = agent.compute_reward(game, (row, col), wrong_digit, True)
+        assert reward < 0
+
+    def test_double_dqn_train_step(self):
+        """Training step should use Double DQN and produce a positive loss."""
+        agent = SudokuRLAgent(device="cpu")
+        state = np.random.rand(9, 9, 10).astype(np.float32)
+        next_state = np.random.rand(9, 9, 10).astype(np.float32)
+        for _ in range(rl_config.BATCH_SIZE + 1):
+            agent.remember(state, (0, 0, 1), 1.0, next_state, False)
+        loss = agent.train_step()
+        assert loss > 0
 
     def test_remember_and_train(self):
         agent = SudokuRLAgent(device="cpu")
