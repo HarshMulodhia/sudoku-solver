@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 name: sudoku-rl-solver
 channels:
   - pytorch
@@ -8,6 +9,15 @@ dependencies:
   - numpy>=1.24
   - pytorch>=2.0
   - pytorch-cuda>=12.1
+=======
+name: sudoku-solver
+channels:
+  - conda-forge
+dependencies:
+  - python>=3.9
+  - numpy>=1.24
+  - pytorch-gpu>=2.0
+>>>>>>> 9e839a1566699572ecf80c319b1a8ea47ee095ac
   - tqdm>=4.66
   - pip:
     - pygame>=2.5

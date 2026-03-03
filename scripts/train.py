@@ -12,7 +12,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
 
 from config import rl_config, DIFFICULTY_LEVELS
 from sudoku_game import SudokuGame
-from rl_agent import SudokuRLAgent
+from rl_agent import SudokuRLAgent, auto_detect_device
 
 def train_agent(episodes: int = 1000, difficulty: str = 'medium', device: str = 'cuda'):
     """
@@ -59,9 +59,14 @@ def train_agent(episodes: int = 1000, difficulty: str = 'medium', device: str = 
             reward = agent.compute_reward(game, (row, col), digit, was_valid)
             episode_reward += reward
             
+            # Undo wrong placements to keep board solvable
+            is_correct = was_valid and game.solution[row, col] == digit
+            if was_valid and not is_correct:
+                game.board[row, col] = 0
+            
             # Get next state
             next_state = game.get_encoded_state()
-            done = game.is_complete()
+            done = game.is_solved()
             
             # Store experience
             agent.remember(state, (row, col, digit), reward, next_state, done)
@@ -107,14 +112,24 @@ def main():
     parser = argparse.ArgumentParser(description='Train Sudoku RL Agent')
     parser.add_argument('--episodes', type=int, default=500, help='Number of training episodes')
     parser.add_argument('--difficulty', type=str, default='medium', choices=['easy', 'medium', 'hard'])
-    parser.add_argument('--device', type=str, default='cuda', choices=['cuda', 'cpu'])
+    parser.add_argument('--device', type=str, default='auto',
+                        choices=['auto', 'cuda', 'mps', 'cpu'])
     
     args = parser.parse_args()
     
-    # Check CUDA availability
-    if args.device == 'cuda' and not torch.cuda.is_available():
-        print("CUDA not available, using CPU")
-        args.device = 'cpu'
+    # Resolve device
+    if args.device == 'auto':
+        args.device = auto_detect_device()
+        print(f"Auto-detected device: {args.device}")
+    elif args.device == 'cuda' and not torch.cuda.is_available():
+        print("CUDA not available, falling back to auto-detection")
+        args.device = auto_detect_device()
+    elif args.device == 'mps' and (
+        not hasattr(torch.backends, 'mps')
+        or not torch.backends.mps.is_available()
+    ):
+        print("MPS not available, falling back to auto-detection")
+        args.device = auto_detect_device()
     
     train_agent(episodes=args.episodes, difficulty=args.difficulty, device=args.device)
 
