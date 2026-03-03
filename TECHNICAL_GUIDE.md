@@ -134,7 +134,7 @@ Conv2d(16→32, 3×3) + ReLU
     ↓
 Conv2d(32→64, 3×3) + ReLU
     ↓
-Flatten → 64×9×9 = 5,184 features
+Flatten → 64×9×9 = 5,184 features  (padding=1 preserves spatial dims)
     ↓
 FC(5184→256) + ReLU + Dropout(0.1)
     ↓
@@ -188,18 +188,19 @@ clip_grad_norm_(params, 1.0)
 
 ```python
 # Valid move: +1
-# Correct digit (matches solution): +10
-# Wrong digit: -10
-# Invalid move (constraint violation): -10
+# Correct digit (matches solution): +10 (in addition to valid-move reward)
+# Wrong digit: -10 (in addition to valid-move reward)
+# Invalid move (rejected by constraint check): -10
 # Puzzle completion: +200
-# Row/Col/Box conflict: -5 each
+# Row/Col/Box conflict (force-placed): -5 each (additional penalty)
 ```
 
 **Design rationale:**
 - High completion reward encourages convergence
 - Large penalty for wrong/invalid moves discourages guessing
 - Small positive reward for valid moves maintains engagement
-- Conflict penalties guide exploration away from violations
+- Conflict penalties (applied on top when using force-placement) guide
+  exploration away from violations
 
 ### Action Space
 
