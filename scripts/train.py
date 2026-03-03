@@ -88,6 +88,9 @@ def train_agent(episodes: int = 1000, difficulty: str = 'medium', device: str = 
         if loss_count > 0:
             episode_losses.append(episode_loss / loss_count)
         
+        # Decay epsilon once per episode
+        agent.decay_epsilon()
+        
         # Log progress
         if (episode + 1) % 50 == 0:
             avg_reward = np.mean(episode_rewards[-50:])

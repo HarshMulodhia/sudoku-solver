@@ -288,6 +288,10 @@ class SudokuRLAgent:
         next_states = next_states.to(self.device)
         dones = dones.to(self.device)
         
+        # Clip rewards to prevent extreme values
+        reward_clip = rl_config.REWARD_CLIP
+        rewards = rewards.clamp(-reward_clip, reward_clip)
+        
         # Compute Q-values for current states
         q_values = self.q_network(states)
         q_values = q_values.gather(1, actions.unsqueeze(1)).squeeze(1)
@@ -299,6 +303,10 @@ class SudokuRLAgent:
                 1, next_actions
             ).squeeze(1)
             target_q_values = rewards + rl_config.GAMMA * next_q_values * (1 - dones)
+            # Clip target Q-values to prevent runaway estimates
+            target_q_values = target_q_values.clamp(
+                -reward_clip * 10, reward_clip * 10
+            )
         
         # Compute loss
         loss = self.loss_fn(q_values, target_q_values)
@@ -314,13 +322,14 @@ class SudokuRLAgent:
         if self.training_steps % rl_config.TARGET_UPDATE_FREQ == 0:
             self.target_network.load_state_dict(self.q_network.state_dict())
         
-        # Decay epsilon
+        return loss.item()
+    
+    def decay_epsilon(self):
+        """Decay epsilon once per episode (not per training step)."""
         self.epsilon = max(
             rl_config.EPSILON_END,
             self.epsilon * rl_config.EPSILON_DECAY
         )
-        
-        return loss.item()
     
     def get_valid_actions(self, game: SudokuGame) -> list:
         """
