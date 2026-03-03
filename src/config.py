@@ -17,26 +17,6 @@ class RLConfig:
     INPUT_SHAPE: Tuple[int, ...] = (9, 9, 10)  # Board state representation
     OUTPUT_SIZE: int = 81 * 9  # 81 cells × 9 possible digits
     HIDDEN_LAYERS: list = None
-<<<<<<< HEAD
-    
-    # Learning Parameters
-    LEARNING_RATE: float = 0.0001
-    GAMMA: float = 0.99  # Discount factor
-    EPSILON_START: float = 1.0
-    EPSILON_END: float = 0.01
-    EPSILON_DECAY: float = 0.9995
-    BATCH_SIZE: int = 32
-    MEMORY_SIZE: int = 100000
-    
-    # Training
-    TARGET_UPDATE_FREQ: int = 1000
-    TRAINING_EPISODES: int = 1000
-    MAX_STEPS: int = 100
-    
-    def __post_init__(self):
-        if self.HIDDEN_LAYERS is None:
-            self.HIDDEN_LAYERS = [256, 256, 128]
-=======
     CONV_CHANNELS: list = None
     
     # Learning Parameters
@@ -58,7 +38,6 @@ class RLConfig:
             self.HIDDEN_LAYERS = [256, 128, 64]
         if self.CONV_CHANNELS is None:
             self.CONV_CHANNELS = [16, 32, 64]
->>>>>>> 9e839a1566699572ecf80c319b1a8ea47ee095ac
 
 @dataclass
 class ThemeColors:
@@ -145,15 +124,6 @@ class UIConfig:
 @dataclass
 class RewardConfig:
     """Reward shaping settings"""
-<<<<<<< HEAD
-    VALID_MOVE_REWARD: float = 10.0
-    INVALID_MOVE_PENALTY: float = -5.0
-    COMPLETION_REWARD: float = 100.0
-    ROW_CONFLICT_PENALTY: float = -1.0
-    COL_CONFLICT_PENALTY: float = -1.0
-    BOX_CONFLICT_PENALTY: float = -1.0
-    DUPLICATE_PENALTY: float = -10.0
-=======
     VALID_MOVE_REWARD: float = 1.0
     INVALID_MOVE_PENALTY: float = -10.0
     COMPLETION_REWARD: float = 200.0
@@ -163,7 +133,6 @@ class RewardConfig:
     DUPLICATE_PENALTY: float = -10.0
     CORRECT_MOVE_REWARD: float = 10.0
     WRONG_MOVE_PENALTY: float = -10.0
->>>>>>> 9e839a1566699572ecf80c319b1a8ea47ee095ac
 
 # Instantiate configs
 game_config = GameConfig()
