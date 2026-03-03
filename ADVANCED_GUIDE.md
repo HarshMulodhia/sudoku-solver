@@ -1,5 +1,12 @@
 # Sudoku RL Solver - Advanced Tips & Best Practices
 
+## Overview
+
+This guide covers advanced techniques and research directions for the
+Sudoku RL Solver.  The project already ships with a Double DQN agent
+(CNN + FC, ~1.4 M parameters) and a deterministic backtracking solver.
+The tips below can help you push the RL component further.
+
 ## For Your Research Background (Autonomous Systems)
 
 As an autonomous systems researcher, you'll appreciate the parallels between Sudoku solving and motion planning:
@@ -213,14 +220,16 @@ class PrioritizedReplayBuffer:
             self.priorities[idx] = priority
 ```
 
-### 3. Double DQN (Reduce Overestimation)
+### 3. Double DQN (Already Implemented)
+
+The codebase already uses Double DQN in `rl_agent.py`:
 
 ```python
 # Standard DQN (tends to overestimate Q-values)
 target = reward + gamma * max(Q_target(next_state))
 #                              ^ This max operation overestimates
 
-# Double DQN (decoupled selection & evaluation)
+# Double DQN (decoupled selection & evaluation) — current implementation
 best_action = argmax(Q_network(next_state))  # Select best action
 target = reward + gamma * Q_target(next_state, best_action)
 #                          ^ Evaluate using different network
@@ -518,12 +527,12 @@ def quantize_model(agent):
 
 | Problem | Cause | Solution |
 |---------|-------|----------|
-| Loss not decreasing | Bad learning rate | Start with 0.001, decay by 0.1 every 500 steps |
+| Loss not decreasing | Bad learning rate | Default is 0.0005; try decaying by 0.1 every 500 steps |
 | Agent never learns | No valid actions | Verify `get_valid_actions()` returns moves |
-| Training diverges | Gradient explosion | Add gradient clipping: `clip_grad_norm_(params, 1.0)` |
+| Training diverges | Gradient explosion | Gradient clipping (max norm 1.0) is already enabled |
 | Overfitting to difficulty | No variety | Use curriculum learning or data augmentation |
 | Slow training | Memory bottleneck | Use mixed precision (float16) or batch accumulation |
-| GPU memory full | Large batch | Reduce batch_size or MEMORY_SIZE |
+| GPU memory full | Large batch | Reduce BATCH_SIZE (default 128) or MEMORY_SIZE (default 50 000) |
 
 ---
 
