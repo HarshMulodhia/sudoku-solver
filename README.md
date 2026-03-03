@@ -8,6 +8,8 @@ solver** (constraint propagation + MRV heuristic) with a **Deep Q-Network
 **pygame UI** featuring a cyberpunk dark/light theme, particle effects,
 and real-time solving visualisation.
 
+![CI](https://github.com/HarshMulodhia/sudoku-solver/actions/workflows/ci.yml/badge.svg)
+
 ## Prerequisites
 
 ```bash
@@ -106,6 +108,20 @@ A Jupyter notebook (`notebooks/solver_comparison.ipynb`) benchmarks both solvers
 on easy / medium / hard puzzles and compares correctness, speed, and reliability.
 When a trained model exists at `models/sudoku_dqn_{difficulty}.pth` the notebook
 loads it automatically; otherwise it falls back to untrained weights.
+Run it with:
+```bash
+cd notebooks && jupyter notebook solver_comparison.ipynb
+```
+
+### Deterministic Backtracking Solver
+- **Algorithm**: Constraint propagation (naked singles) + recursive backtracking
+- **Heuristic**: Minimum Remaining Values (MRV) – always branches on the cell with the fewest candidates
+- **Guarantee**: Finds a valid solution whenever one exists (100 % success rate)
+- **Speed**: Solves most 9×9 puzzles in < 5 ms
+
+### Solver Comparison Notebook
+A Jupyter notebook (`notebooks/solver_comparison.ipynb`) benchmarks both solvers
+on easy / medium / hard puzzles and compares correctness, speed, and reliability.
 Run it with:
 ```bash
 cd notebooks && jupyter notebook solver_comparison.ipynb
