@@ -38,7 +38,7 @@ class DQNNetwork(nn.Module):
         
         # Activation and regularization
         self.relu = nn.ReLU()
-        self.dropout = nn.Dropout(0.3)
+        self.dropout = nn.Dropout(0.1)
     
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
@@ -271,9 +271,12 @@ class SudokuRLAgent:
         q_values = self.q_network(states)
         q_values = q_values.gather(1, actions.unsqueeze(1)).squeeze(1)
         
-        # Compute target Q-values
+        # Compute target Q-values using Double DQN
         with torch.no_grad():
-            next_q_values = self.target_network(next_states).max(1)[0]
+            next_actions = self.q_network(next_states).argmax(1, keepdim=True)
+            next_q_values = self.target_network(next_states).gather(
+                1, next_actions
+            ).squeeze(1)
             target_q_values = rewards + rl_config.GAMMA * next_q_values * (1 - dones)
         
         # Compute loss

@@ -19,22 +19,22 @@ class RLConfig:
     HIDDEN_LAYERS: list = None
     
     # Learning Parameters
-    LEARNING_RATE: float = 0.0001
-    GAMMA: float = 0.99  # Discount factor
+    LEARNING_RATE: float = 0.001
+    GAMMA: float = 0.95  # Discount factor
     EPSILON_START: float = 1.0
-    EPSILON_END: float = 0.01
-    EPSILON_DECAY: float = 0.9995
-    BATCH_SIZE: int = 32
+    EPSILON_END: float = 0.05
+    EPSILON_DECAY: float = 0.999
+    BATCH_SIZE: int = 64
     MEMORY_SIZE: int = 100000
     
     # Training
-    TARGET_UPDATE_FREQ: int = 1000
-    TRAINING_EPISODES: int = 1000
-    MAX_STEPS: int = 100
+    TARGET_UPDATE_FREQ: int = 500
+    TRAINING_EPISODES: int = 2000
+    MAX_STEPS: int = 81
     
     def __post_init__(self):
         if self.HIDDEN_LAYERS is None:
-            self.HIDDEN_LAYERS = [256, 256, 128]
+            self.HIDDEN_LAYERS = [512, 256, 128]
 
 @dataclass
 class ThemeColors:
@@ -121,15 +121,15 @@ class UIConfig:
 @dataclass
 class RewardConfig:
     """Reward shaping settings"""
-    VALID_MOVE_REWARD: float = 10.0
-    INVALID_MOVE_PENALTY: float = -5.0
-    COMPLETION_REWARD: float = 500.0
-    ROW_CONFLICT_PENALTY: float = -1.0
-    COL_CONFLICT_PENALTY: float = -1.0
-    BOX_CONFLICT_PENALTY: float = -1.0
+    VALID_MOVE_REWARD: float = 1.0
+    INVALID_MOVE_PENALTY: float = -10.0
+    COMPLETION_REWARD: float = 200.0
+    ROW_CONFLICT_PENALTY: float = -5.0
+    COL_CONFLICT_PENALTY: float = -5.0
+    BOX_CONFLICT_PENALTY: float = -5.0
     DUPLICATE_PENALTY: float = -10.0
-    CORRECT_MOVE_REWARD: float = 15.0
-    WRONG_MOVE_PENALTY: float = -3.0
+    CORRECT_MOVE_REWARD: float = 10.0
+    WRONG_MOVE_PENALTY: float = -10.0
 
 # Instantiate configs
 game_config = GameConfig()

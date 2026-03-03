@@ -18,11 +18,11 @@ class TestRLConfig:
         cfg = RLConfig()
         assert cfg.INPUT_SHAPE == (9, 9, 10)
         assert cfg.OUTPUT_SIZE == 729
-        assert cfg.HIDDEN_LAYERS == [256, 256, 128]
+        assert cfg.HIDDEN_LAYERS == [512, 256, 128]
 
     def test_post_init_hidden_layers(self):
         cfg = RLConfig(HIDDEN_LAYERS=None)
-        assert cfg.HIDDEN_LAYERS == [256, 256, 128]
+        assert cfg.HIDDEN_LAYERS == [512, 256, 128]
 
 
 class TestUIConfig:

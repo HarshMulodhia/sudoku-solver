@@ -59,9 +59,14 @@ def train_agent(episodes: int = 1000, difficulty: str = 'medium', device: str = 
             reward = agent.compute_reward(game, (row, col), digit, was_valid)
             episode_reward += reward
             
+            # Undo wrong placements to keep board solvable
+            is_correct = was_valid and game.solution[row, col] == digit
+            if was_valid and not is_correct:
+                game.board[row, col] = 0
+            
             # Get next state
             next_state = game.get_encoded_state()
-            done = game.is_complete()
+            done = game.is_complete() and game.is_solved()
             
             # Store experience
             agent.remember(state, (row, col, digit), reward, next_state, done)
