@@ -1,6 +1,12 @@
-# Sudoku RL Solver - Installation & Setup Guide
+# Sudoku RL Solver
 
 ![CI](https://github.com/HarshMulodhia/sudoku-solver/actions/workflows/ci.yml/badge.svg)
+
+A modular Sudoku-solving toolkit that pairs a **deterministic backtracking
+solver** (constraint propagation + MRV heuristic) with a **Deep Q-Network
+(DQN) reinforcement-learning agent**, all wrapped in an interactive
+**pygame UI** featuring a cyberpunk dark/light theme, particle effects,
+and real-time solving visualisation.
 
 ## Prerequisites
 
@@ -36,9 +42,9 @@ sudoku-rl-solver/
 │   ├── __init__.py
 │   ├── config.py              # Configuration & hyperparameters
 │   ├── sudoku_game.py         # Game logic & constraint handling
-│   ├── rl_agent.py            # DQN agent implementation
+│   ├── rl_agent.py            # Double DQN agent implementation
 │   ├── backtracking_solver.py # Deterministic backtracking solver
-│   └── pygame_ui.py           # High-tech pygame interface
+│   └── pygame_ui.py           # Interactive pygame interface
 ├── scripts/                   # Executable scripts
 │   ├── train.py               # Training script
 │   └── solver.py              # Inference & visualization
@@ -79,14 +85,15 @@ python -m pytest tests/ -v
 ## Features
 
 ### RL Component
-- **Algorithm**: Deep Q-Network (DQN) with Experience Replay
-- **State Representation**: 9×9×10 tensor (position × 10 digit possibilities)
-- **Action Space**: 81 × 9 (cell × digit selections)
+- **Algorithm**: Double DQN with Experience Replay and SmoothL1 (Huber) loss
+- **Architecture**: 3 Conv2d layers (10→16→32→64) + 3 FC layers (256→128→64) ≈ 1.4 M parameters
+- **State Representation**: 9×9×10 one-hot tensor (empty-cell indicator + digit channels)
+- **Action Space**: 81 × 9 = 729 (cell × digit selections)
 - **Reward System**:
-  - +10 for valid cell fill
-  - -1 for invalid move
-  - +100 for puzzle completion
-  - Constraint violation penalties
+  - +1 for a valid move
+  - +10 for placing the correct digit (matches solution)
+  - −10 for a wrong digit or invalid move
+  - +200 for puzzle completion
 
 ### Deterministic Backtracking Solver
 - **Algorithm**: Constraint propagation (naked singles) + recursive backtracking
@@ -97,6 +104,8 @@ python -m pytest tests/ -v
 ### Solver Comparison Notebook
 A Jupyter notebook (`notebooks/solver_comparison.ipynb`) benchmarks both solvers
 on easy / medium / hard puzzles and compares correctness, speed, and reliability.
+When a trained model exists at `models/sudoku_dqn_{difficulty}.pth` the notebook
+loads it automatically; otherwise it falls back to untrained weights.
 Run it with:
 ```bash
 cd notebooks && jupyter notebook solver_comparison.ipynb
@@ -121,10 +130,10 @@ cd notebooks && jupyter notebook solver_comparison.ipynb
 ## Configuration
 
 Edit `src/config.py` to customize:
-- Neural network architecture
-- Learning hyperparameters (α, γ, ε)
-- Replay buffer size
-- Training episodes
+- Neural network architecture (conv channels, hidden layer sizes)
+- Learning hyperparameters (LR = 0.0005, γ = 0.99, ε decay = 0.995)
+- Replay buffer size (50 000) and batch size (128)
+- Target network sync frequency (every 100 steps)
 - UI theme and animation speed
 
 ## Performance Metrics
