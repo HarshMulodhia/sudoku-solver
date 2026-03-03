@@ -207,3 +207,39 @@ class TestSudokuRLAgent:
         x = torch.randn(1, 9, 9, 10)
         out = net(x)
         assert out.shape == (1, 729)
+
+    def test_training_device_consistency(self):
+        """All tensors should be on the same device during training."""
+        device_str = "cpu"
+        agent = SudokuRLAgent(device=device_str)
+
+        # Verify networks are on the correct device
+        for p in agent.q_network.parameters():
+            assert p.device.type == device_str
+        for p in agent.target_network.parameters():
+            assert p.device.type == device_str
+
+        # Fill replay buffer and run a training step
+        game = SudokuGame("easy")
+        state = game.get_encoded_state()
+        valid_actions = agent.get_valid_actions(game)
+        row, col, digit = agent.select_action(
+            state, valid_actions, training=True
+        )
+        was_valid = game.place_digit(row, col, digit)
+        reward = agent.compute_reward(
+            game, (row, col), digit, was_valid
+        )
+        next_state = game.get_encoded_state()
+
+        for _ in range(rl_config.BATCH_SIZE + 1):
+            agent.remember(
+                state, (row, col, digit), reward, next_state, False
+            )
+
+        loss = agent.train_step()
+        assert loss > 0
+
+        # Verify weights are still on the correct device after training
+        for p in agent.q_network.parameters():
+            assert p.device.type == device_str
