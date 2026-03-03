@@ -13,7 +13,8 @@ from sudoku_game import SudokuGame
 class DQNNetwork(nn.Module):
     """Deep Q-Network architecture"""
     
-    def __init__(self, input_shape: Tuple[int, ...], output_size: int, hidden_layers: list):
+    def __init__(self, input_shape: Tuple[int, ...], output_size: int,
+                 hidden_layers: list, conv_channels: list = None):
         """
         Initialize DQN
         
@@ -21,16 +22,23 @@ class DQNNetwork(nn.Module):
             input_shape: Shape of input tensor (9, 9, 10)
             output_size: Size of output Q-values (81*9)
             hidden_layers: List of hidden layer sizes
+            conv_channels: List of conv layer channel sizes,
+                defaults to rl_config.CONV_CHANNELS
         """
         super(DQNNetwork, self).__init__()
         
+        if conv_channels is None:
+            conv_channels = rl_config.CONV_CHANNELS
+        
         # Convolutional layers for spatial feature extraction
-        self.conv1 = nn.Conv2d(10, 32, kernel_size=3, padding=1)
-        self.conv2 = nn.Conv2d(32, 64, kernel_size=3, padding=1)
-        self.conv3 = nn.Conv2d(64, 128, kernel_size=3, padding=1)
+        self.conv1 = nn.Conv2d(10, conv_channels[0], kernel_size=3, padding=1)
+        self.conv2 = nn.Conv2d(conv_channels[0], conv_channels[1],
+                               kernel_size=3, padding=1)
+        self.conv3 = nn.Conv2d(conv_channels[1], conv_channels[2],
+                               kernel_size=3, padding=1)
         
         # Fully connected layers
-        self.fc_input_size = 128 * 9 * 9  # After conv layers
+        self.fc_input_size = conv_channels[2] * 9 * 9  # After conv layers
         self.fc1 = nn.Linear(self.fc_input_size, hidden_layers[0])
         self.fc2 = nn.Linear(hidden_layers[0], hidden_layers[1])
         self.fc3 = nn.Linear(hidden_layers[1], hidden_layers[2])
@@ -114,29 +122,42 @@ class ExperienceReplay:
         return len(self.buffer)
 
 
+def auto_detect_device() -> str:
+    """Auto-detect the best available device (cuda, mps, or cpu)."""
+    if torch.cuda.is_available():
+        return 'cuda'
+    if hasattr(torch.backends, 'mps') and torch.backends.mps.is_available():
+        return 'mps'
+    return 'cpu'
+
+
 class SudokuRLAgent:
     """Deep Q-Learning agent for Sudoku solving"""
     
-    def __init__(self, device: str = 'cuda' if torch.cuda.is_available() else 'cpu'):
+    def __init__(self, device: str = None):
         """
         Initialize RL agent
         
         Args:
-            device: 'cuda' or 'cpu'
+            device: 'cuda', 'mps', 'cpu', or None for auto-detection
         """
+        if device is None:
+            device = auto_detect_device()
         self.device = torch.device(device)
         
         # Q-networks
         self.q_network = DQNNetwork(
             input_shape=rl_config.INPUT_SHAPE,
             output_size=rl_config.OUTPUT_SIZE,
-            hidden_layers=rl_config.HIDDEN_LAYERS
+            hidden_layers=rl_config.HIDDEN_LAYERS,
+            conv_channels=rl_config.CONV_CHANNELS,
         ).to(self.device)
         
         self.target_network = DQNNetwork(
             input_shape=rl_config.INPUT_SHAPE,
             output_size=rl_config.OUTPUT_SIZE,
-            hidden_layers=rl_config.HIDDEN_LAYERS
+            hidden_layers=rl_config.HIDDEN_LAYERS,
+            conv_channels=rl_config.CONV_CHANNELS,
         ).to(self.device)
         
         self.target_network.load_state_dict(self.q_network.state_dict())

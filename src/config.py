@@ -17,24 +17,27 @@ class RLConfig:
     INPUT_SHAPE: Tuple[int, ...] = (9, 9, 10)  # Board state representation
     OUTPUT_SIZE: int = 81 * 9  # 81 cells × 9 possible digits
     HIDDEN_LAYERS: list = None
+    CONV_CHANNELS: list = None
     
     # Learning Parameters
-    LEARNING_RATE: float = 0.001
-    GAMMA: float = 0.95  # Discount factor
+    LEARNING_RATE: float = 0.0005
+    GAMMA: float = 0.99  # Discount factor
     EPSILON_START: float = 1.0
     EPSILON_END: float = 0.05
-    EPSILON_DECAY: float = 0.999
-    BATCH_SIZE: int = 64
-    MEMORY_SIZE: int = 100000
+    EPSILON_DECAY: float = 0.995
+    BATCH_SIZE: int = 128
+    MEMORY_SIZE: int = 50000
     
     # Training
-    TARGET_UPDATE_FREQ: int = 500
+    TARGET_UPDATE_FREQ: int = 100
     TRAINING_EPISODES: int = 2000
     MAX_STEPS: int = 81
     
     def __post_init__(self):
         if self.HIDDEN_LAYERS is None:
-            self.HIDDEN_LAYERS = [512, 256, 128]
+            self.HIDDEN_LAYERS = [256, 128, 64]
+        if self.CONV_CHANNELS is None:
+            self.CONV_CHANNELS = [16, 32, 64]
 
 @dataclass
 class ThemeColors:

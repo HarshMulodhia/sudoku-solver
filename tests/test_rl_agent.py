@@ -4,7 +4,7 @@ import numpy as np
 import torch
 import pytest
 
-from rl_agent import DQNNetwork, ExperienceReplay, SudokuRLAgent
+from rl_agent import DQNNetwork, ExperienceReplay, SudokuRLAgent, auto_detect_device
 from sudoku_game import SudokuGame
 from config import rl_config
 
@@ -177,3 +177,69 @@ class TestSudokuRLAgent:
             agent.q_network.parameters(), agent2.q_network.parameters()
         ):
             assert torch.equal(p1, p2)
+
+    def test_reduced_network_size(self):
+        """Network should have fewer than 2M parameters."""
+        agent = SudokuRLAgent(device="cpu")
+        param_count = sum(
+            p.numel() for p in agent.q_network.parameters()
+        )
+        assert param_count < 2_000_000
+
+    def test_auto_detect_device(self):
+        """auto_detect_device should return a valid device string."""
+        device = auto_detect_device()
+        assert device in ('cuda', 'mps', 'cpu')
+
+    def test_agent_auto_device(self):
+        """Agent with device=None should auto-detect."""
+        agent = SudokuRLAgent(device=None)
+        assert agent.device.type in ('cuda', 'mps', 'cpu')
+
+    def test_conv_channels_configurable(self):
+        """DQNNetwork should accept custom conv_channels."""
+        net = DQNNetwork(
+            input_shape=rl_config.INPUT_SHAPE,
+            output_size=rl_config.OUTPUT_SIZE,
+            hidden_layers=[128, 64, 32],
+            conv_channels=[8, 16, 32],
+        )
+        x = torch.randn(1, 9, 9, 10)
+        out = net(x)
+        assert out.shape == (1, 729)
+
+    def test_training_device_consistency(self):
+        """All tensors should be on the same device during training."""
+        device_str = "cpu"
+        agent = SudokuRLAgent(device=device_str)
+
+        # Verify networks are on the correct device
+        for p in agent.q_network.parameters():
+            assert p.device.type == device_str
+        for p in agent.target_network.parameters():
+            assert p.device.type == device_str
+
+        # Fill replay buffer and run a training step
+        game = SudokuGame("easy")
+        state = game.get_encoded_state()
+        valid_actions = agent.get_valid_actions(game)
+        row, col, digit = agent.select_action(
+            state, valid_actions, training=True
+        )
+        was_valid = game.place_digit(row, col, digit)
+        reward = agent.compute_reward(
+            game, (row, col), digit, was_valid
+        )
+        next_state = game.get_encoded_state()
+
+        for _ in range(rl_config.BATCH_SIZE + 1):
+            agent.remember(
+                state, (row, col, digit), reward, next_state, False
+            )
+
+        loss = agent.train_step()
+        assert loss > 0
+
+        # Verify weights are still on the correct device after training
+        for p in agent.q_network.parameters():
+            assert p.device.type == device_str
