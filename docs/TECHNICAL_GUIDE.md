@@ -162,7 +162,7 @@ reward, next_state, done = environment.step(action)
 memory.push(state, action, reward, next_state, done)
 
 # 4. Sample batch from replay buffer
-batch = memory.sample(batch_size=128)
+batch = memory.sample(batch_size=64)
 
 # 5. Compute TD target (Double DQN)
 best_action = argmax(Q_network(next_state))
@@ -173,7 +173,7 @@ Loss = SmoothL1(Q(state, action), y)
 ∇Loss.backward()
 clip_grad_norm_(params, 1.0)
 
-# 7. Every 100 steps: Q_target ← Q_network
+# 7. Every 500 steps: Q_target ← Q_network
 ```
 
 **Hyperparameters:**
