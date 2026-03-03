@@ -539,7 +539,7 @@ class SudokuPPOAgent:
             logits = logits.squeeze(0)
 
             # Mask invalid actions with large negative value
-            logits = logits + (mask_tensor.log() + 1e-8)
+            logits = logits + (mask_tensor + 1e-8).log()
 
             probs = torch.softmax(logits, dim=-1)
             dist = torch.distributions.Categorical(probs)
@@ -579,7 +579,7 @@ class SudokuPPOAgent:
         value = value.squeeze()
 
         # Mask invalid actions
-        logits = logits + (mask_tensor.log() + 1e-8)
+        logits = logits + (mask_tensor + 1e-8).log()
 
         probs = torch.softmax(logits, dim=-1)
         dist = torch.distributions.Categorical(probs)
@@ -732,7 +732,7 @@ class SudokuPPOAgent:
                 values = values.squeeze(-1)
 
                 # Mask invalid actions
-                logits = logits + (mb_masks.log() + 1e-8)
+                logits = logits + (mb_masks + 1e-8).log()
 
                 probs = torch.softmax(logits, dim=-1)
                 dist = torch.distributions.Categorical(probs)
