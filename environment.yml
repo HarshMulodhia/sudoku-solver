@@ -1,13 +1,10 @@
 name: sudoku-solver
 channels:
-  - pytorch
-  - nvidia
-  - defaults
+  - conda-forge
 dependencies:
   - python>=3.9
   - numpy>=1.24
-  - pytorch>=2.0
-  - pytorch-cuda>=12.1
+  - pytorch-gpu>=2.0
   - tqdm>=4.66
   - pip:
     - pygame>=2.5
