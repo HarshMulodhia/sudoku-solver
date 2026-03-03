@@ -22,12 +22,13 @@ class DQNNetwork(nn.Module):
             input_shape: Shape of input tensor (9, 9, 10)
             output_size: Size of output Q-values (81*9)
             hidden_layers: List of hidden layer sizes
-            conv_channels: List of conv layer channel sizes
+            conv_channels: List of conv layer channel sizes,
+                defaults to rl_config.CONV_CHANNELS
         """
         super(DQNNetwork, self).__init__()
         
         if conv_channels is None:
-            conv_channels = [16, 32, 64]
+            conv_channels = rl_config.CONV_CHANNELS
         
         # Convolutional layers for spatial feature extraction
         self.conv1 = nn.Conv2d(10, conv_channels[0], kernel_size=3, padding=1)

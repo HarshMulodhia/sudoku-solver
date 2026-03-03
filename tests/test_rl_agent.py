@@ -179,7 +179,7 @@ class TestSudokuRLAgent:
             assert torch.equal(p1, p2)
 
     def test_reduced_network_size(self):
-        """Network should have significantly fewer than 5.6M parameters."""
+        """Network should have fewer than 2M parameters."""
         agent = SudokuRLAgent(device="cpu")
         param_count = sum(
             p.numel() for p in agent.q_network.parameters()
