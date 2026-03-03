@@ -175,15 +175,11 @@ class InteractiveSudokuSolver:
                                 self.place_number(row, col, hint)
                                 print(f"Hint: Place {hint} at ({row}, {col})")
                     
-<<<<<<< HEAD
                     # Toggle theme
                     elif event.key == pygame.K_t:
                         self.ui.toggle_theme()
                     
-                    # Auto-solve
-=======
                     # Auto-solve with active mode
->>>>>>> 9e839a1566699572ecf80c319b1a8ea47ee095ac
                     elif event.key == pygame.K_SPACE:
                         if not auto_solving:
                             auto_solving = True

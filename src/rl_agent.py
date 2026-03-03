@@ -10,10 +10,21 @@ from typing import Tuple
 from config import rl_config, reward_config
 from sudoku_game import SudokuGame
 
+
+def auto_detect_device() -> str:
+    """Return the best available device string: 'cuda', 'mps', or 'cpu'."""
+    if torch.cuda.is_available():
+        return 'cuda'
+    if hasattr(torch.backends, 'mps') and torch.backends.mps.is_available():
+        return 'mps'
+    return 'cpu'
+
+
 class DQNNetwork(nn.Module):
     """Deep Q-Network architecture"""
     
-    def __init__(self, input_shape: Tuple[int, ...], output_size: int, hidden_layers: list):
+    def __init__(self, input_shape: Tuple[int, ...], output_size: int,
+                 hidden_layers: list, conv_channels: list = None):
         """
         Initialize DQN
         
@@ -21,16 +32,20 @@ class DQNNetwork(nn.Module):
             input_shape: Shape of input tensor (9, 9, 10)
             output_size: Size of output Q-values (81*9)
             hidden_layers: List of hidden layer sizes
+            conv_channels: List of conv channel sizes (default: [16, 32, 64])
         """
         super(DQNNetwork, self).__init__()
         
+        if conv_channels is None:
+            conv_channels = rl_config.CONV_CHANNELS
+        
         # Convolutional layers for spatial feature extraction
-        self.conv1 = nn.Conv2d(10, 32, kernel_size=3, padding=1)
-        self.conv2 = nn.Conv2d(32, 64, kernel_size=3, padding=1)
-        self.conv3 = nn.Conv2d(64, 128, kernel_size=3, padding=1)
+        self.conv1 = nn.Conv2d(10, conv_channels[0], kernel_size=3, padding=1)
+        self.conv2 = nn.Conv2d(conv_channels[0], conv_channels[1], kernel_size=3, padding=1)
+        self.conv3 = nn.Conv2d(conv_channels[1], conv_channels[2], kernel_size=3, padding=1)
         
         # Fully connected layers
-        self.fc_input_size = 128 * 9 * 9  # After conv layers
+        self.fc_input_size = conv_channels[2] * 9 * 9  # After conv layers
         self.fc1 = nn.Linear(self.fc_input_size, hidden_layers[0])
         self.fc2 = nn.Linear(hidden_layers[0], hidden_layers[1])
         self.fc3 = nn.Linear(hidden_layers[1], hidden_layers[2])
@@ -38,7 +53,7 @@ class DQNNetwork(nn.Module):
         
         # Activation and regularization
         self.relu = nn.ReLU()
-        self.dropout = nn.Dropout(0.3)
+        self.dropout = nn.Dropout(0.1)
     
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
@@ -117,26 +132,30 @@ class ExperienceReplay:
 class SudokuRLAgent:
     """Deep Q-Learning agent for Sudoku solving"""
     
-    def __init__(self, device: str = 'cuda' if torch.cuda.is_available() else 'cpu'):
+    def __init__(self, device=None):
         """
         Initialize RL agent
         
         Args:
-            device: 'cuda' or 'cpu'
+            device: 'cuda', 'mps', 'cpu', or None for auto-detection
         """
+        if device is None:
+            device = auto_detect_device()
         self.device = torch.device(device)
         
         # Q-networks
         self.q_network = DQNNetwork(
             input_shape=rl_config.INPUT_SHAPE,
             output_size=rl_config.OUTPUT_SIZE,
-            hidden_layers=rl_config.HIDDEN_LAYERS
+            hidden_layers=rl_config.HIDDEN_LAYERS,
+            conv_channels=rl_config.CONV_CHANNELS,
         ).to(self.device)
         
         self.target_network = DQNNetwork(
             input_shape=rl_config.INPUT_SHAPE,
             output_size=rl_config.OUTPUT_SIZE,
-            hidden_layers=rl_config.HIDDEN_LAYERS
+            hidden_layers=rl_config.HIDDEN_LAYERS,
+            conv_channels=rl_config.CONV_CHANNELS,
         ).to(self.device)
         
         self.target_network.load_state_dict(self.q_network.state_dict())
@@ -220,6 +239,15 @@ class SudokuRLAgent:
         
         if not was_valid:
             return reward_config.INVALID_MOVE_PENALTY
+        
+        row, col = cell
+        
+        # Check if digit matches the solution
+        if digit == int(game.solution[row, col]):
+            reward += reward_config.CORRECT_MOVE_REWARD
+        else:
+            reward += reward_config.WRONG_MOVE_PENALTY
+            return reward
         
         reward += reward_config.VALID_MOVE_REWARD
         

@@ -8,10 +8,6 @@ solver** (constraint propagation + MRV heuristic) with a **Deep Q-Network
 **pygame UI** featuring a cyberpunk dark/light theme, particle effects,
 and real-time solving visualisation.
 
-![CI](https://github.com/HarshMulodhia/sudoku-solver/actions/workflows/ci.yml/badge.svg)
-
-![CI](https://github.com/HarshMulodhia/sudoku-solver/actions/workflows/ci.yml/badge.svg)
-
 ## Prerequisites
 
 ```bash
@@ -46,15 +42,9 @@ sudoku-rl-solver/
 │   ├── __init__.py
 │   ├── config.py              # Configuration & hyperparameters
 │   ├── sudoku_game.py         # Game logic & constraint handling
-<<<<<<< HEAD
 │   ├── rl_agent.py            # DQN agent implementation
 │   ├── backtracking_solver.py # Deterministic backtracking solver
 │   └── pygame_ui.py           # High-tech pygame interface
-=======
-│   ├── rl_agent.py            # Double DQN agent implementation
-│   ├── backtracking_solver.py # Deterministic backtracking solver
-│   └── pygame_ui.py           # Interactive pygame interface
->>>>>>> 9e839a1566699572ecf80c319b1a8ea47ee095ac
 ├── scripts/                   # Executable scripts
 │   ├── train.py               # Training script
 │   └── solver.py              # Inference & visualization
@@ -63,10 +53,6 @@ sudoku-rl-solver/
 ├── tests/                     # Test suite
 │   ├── test_config.py
 │   ├── test_sudoku_game.py
-<<<<<<< HEAD
-=======
-│   ├── test_pygame_ui.py
->>>>>>> 9e839a1566699572ecf80c319b1a8ea47ee095ac
 │   ├── test_rl_agent.py
 │   └── test_backtracking_solver.py
 └── models/                    # Saved trained models
@@ -167,17 +153,10 @@ cd notebooks && jupyter notebook solver_comparison.ipynb
 ## Configuration
 
 Edit `src/config.py` to customize:
-<<<<<<< HEAD
 - Neural network architecture
 - Learning hyperparameters (α, γ, ε)
 - Replay buffer size
 - Training episodes
-=======
-- Neural network architecture (conv channels, hidden layer sizes)
-- Learning hyperparameters (LR = 0.0005, γ = 0.99, ε decay = 0.995)
-- Replay buffer size (50 000) and batch size (128)
-- Target network sync frequency (every 100 steps)
->>>>>>> 9e839a1566699572ecf80c319b1a8ea47ee095ac
 - UI theme and animation speed
 
 ## Performance Metrics
