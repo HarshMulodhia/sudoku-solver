@@ -10,10 +10,21 @@ from typing import Tuple
 from config import rl_config, reward_config
 from sudoku_game import SudokuGame
 
+
+def auto_detect_device() -> str:
+    """Auto-detect the best available device."""
+    if torch.cuda.is_available():
+        return 'cuda'
+    if hasattr(torch.backends, 'mps') and torch.backends.mps.is_available():
+        return 'mps'
+    return 'cpu'
+
+
 class DQNNetwork(nn.Module):
     """Deep Q-Network architecture"""
     
-    def __init__(self, input_shape: Tuple[int, ...], output_size: int, hidden_layers: list):
+    def __init__(self, input_shape: Tuple[int, ...], output_size: int,
+                 hidden_layers: list, conv_channels: list = None):
         """
         Initialize DQN
         
@@ -21,16 +32,22 @@ class DQNNetwork(nn.Module):
             input_shape: Shape of input tensor (9, 9, 10)
             output_size: Size of output Q-values (81*9)
             hidden_layers: List of hidden layer sizes
+            conv_channels: List of conv channel sizes (default from config)
         """
         super(DQNNetwork, self).__init__()
         
+        if conv_channels is None:
+            conv_channels = rl_config.CONV_CHANNELS
+        
         # Convolutional layers for spatial feature extraction
-        self.conv1 = nn.Conv2d(10, 32, kernel_size=3, padding=1)
-        self.conv2 = nn.Conv2d(32, 64, kernel_size=3, padding=1)
-        self.conv3 = nn.Conv2d(64, 128, kernel_size=3, padding=1)
+        in_ch = 10  # input channels from one-hot encoding
+        self.convs = nn.ModuleList()
+        for out_ch in conv_channels:
+            self.convs.append(nn.Conv2d(in_ch, out_ch, kernel_size=3, padding=1))
+            in_ch = out_ch
         
         # Fully connected layers
-        self.fc_input_size = 128 * 9 * 9  # After conv layers
+        self.fc_input_size = conv_channels[-1] * 9 * 9
         self.fc1 = nn.Linear(self.fc_input_size, hidden_layers[0])
         self.fc2 = nn.Linear(hidden_layers[0], hidden_layers[1])
         self.fc3 = nn.Linear(hidden_layers[1], hidden_layers[2])
@@ -38,7 +55,7 @@ class DQNNetwork(nn.Module):
         
         # Activation and regularization
         self.relu = nn.ReLU()
-        self.dropout = nn.Dropout(0.3)
+        self.dropout = nn.Dropout(0.1)
     
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
@@ -57,9 +74,8 @@ class DQNNetwork(nn.Module):
         x = x.permute(0, 3, 1, 2)  # (batch, 10, 9, 9)
         
         # Convolutional feature extraction
-        x = self.relu(self.conv1(x))
-        x = self.relu(self.conv2(x))
-        x = self.relu(self.conv3(x))
+        for conv in self.convs:
+            x = self.relu(conv(x))
         
         # Flatten and fully connected layers
         x = x.reshape(x.size(0), -1)
@@ -117,13 +133,15 @@ class ExperienceReplay:
 class SudokuRLAgent:
     """Deep Q-Learning agent for Sudoku solving"""
     
-    def __init__(self, device: str = 'cuda' if torch.cuda.is_available() else 'cpu'):
+    def __init__(self, device: str = None):
         """
         Initialize RL agent
         
         Args:
-            device: 'cuda' or 'cpu'
+            device: 'cuda', 'cpu', 'mps', or None for auto-detect
         """
+        if device is None:
+            device = auto_detect_device()
         self.device = torch.device(device)
         
         # Q-networks
@@ -220,6 +238,13 @@ class SudokuRLAgent:
         
         if not was_valid:
             return reward_config.INVALID_MOVE_PENALTY
+        
+        # Check if the digit matches the solution
+        row, col = cell
+        if digit == int(game.solution[row, col]):
+            reward += reward_config.CORRECT_MOVE_REWARD
+        else:
+            reward += reward_config.WRONG_MOVE_PENALTY
         
         reward += reward_config.VALID_MOVE_REWARD
         
