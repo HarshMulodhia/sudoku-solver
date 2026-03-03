@@ -243,3 +243,42 @@ class TestSudokuRLAgent:
         # Verify weights are still on the correct device after training
         for p in agent.q_network.parameters():
             assert p.device.type == device_str
+
+    def test_decay_epsilon_per_episode(self):
+        """decay_epsilon should reduce epsilon once per call."""
+        agent = SudokuRLAgent(device="cpu")
+        agent.epsilon = 1.0
+        agent.decay_epsilon()
+        assert agent.epsilon == 1.0 * rl_config.EPSILON_DECAY
+
+    def test_decay_epsilon_respects_minimum(self):
+        """decay_epsilon should not go below EPSILON_END."""
+        agent = SudokuRLAgent(device="cpu")
+        agent.epsilon = rl_config.EPSILON_END
+        agent.decay_epsilon()
+        assert agent.epsilon == rl_config.EPSILON_END
+
+    def test_train_step_does_not_decay_epsilon(self):
+        """train_step should not change epsilon (decay is per-episode)."""
+        agent = SudokuRLAgent(device="cpu")
+        state = np.random.rand(9, 9, 10).astype(np.float32)
+        next_state = np.random.rand(9, 9, 10).astype(np.float32)
+        for _ in range(rl_config.BATCH_SIZE + 1):
+            agent.remember(state, (0, 0, 1), 1.0, next_state, False)
+        eps_before = agent.epsilon
+        agent.train_step()
+        assert agent.epsilon == eps_before
+
+    def test_reward_clipping_in_train_step(self):
+        """Rewards should be clipped during training to prevent divergence."""
+        agent = SudokuRLAgent(device="cpu")
+        state = np.random.rand(9, 9, 10).astype(np.float32)
+        next_state = np.random.rand(9, 9, 10).astype(np.float32)
+        # Store experiences with extreme reward values
+        for _ in range(rl_config.BATCH_SIZE + 1):
+            agent.remember(state, (0, 0, 1), 99999.0, next_state, False)
+        loss = agent.train_step()
+        # Loss should be finite (not NaN/Inf) thanks to clipping
+        assert loss > 0
+        assert not np.isnan(loss)
+        assert not np.isinf(loss)

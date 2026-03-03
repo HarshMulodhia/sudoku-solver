@@ -8,10 +8,6 @@ solver** (constraint propagation + MRV heuristic) with a **Deep Q-Network
 **pygame UI** featuring a cyberpunk dark/light theme, particle effects,
 and real-time solving visualisation.
 
-![CI](https://github.com/HarshMulodhia/sudoku-solver/actions/workflows/ci.yml/badge.svg)
-
-![CI](https://github.com/HarshMulodhia/sudoku-solver/actions/workflows/ci.yml/badge.svg)
-
 ## Prerequisites
 
 ```bash
@@ -46,27 +42,21 @@ sudoku-rl-solver/
 │   ├── __init__.py
 │   ├── config.py              # Configuration & hyperparameters
 │   ├── sudoku_game.py         # Game logic & constraint handling
-<<<<<<< HEAD
-│   ├── rl_agent.py            # DQN agent implementation
-│   ├── backtracking_solver.py # Deterministic backtracking solver
-│   └── pygame_ui.py           # High-tech pygame interface
-=======
 │   ├── rl_agent.py            # Double DQN agent implementation
 │   ├── backtracking_solver.py # Deterministic backtracking solver
 │   └── pygame_ui.py           # Interactive pygame interface
->>>>>>> 9e839a1566699572ecf80c319b1a8ea47ee095ac
 ├── scripts/                   # Executable scripts
 │   ├── train.py               # Training script
 │   └── solver.py              # Inference & visualization
 ├── notebooks/                 # Analysis notebooks
 │   └── solver_comparison.ipynb  # Backtracking vs RL comparison
+├── docs/                      # Guides & documentation
+│   ├── ADVANCED_GUIDE.md      # Advanced tips & best practices
+│   └── TECHNICAL_GUIDE.md     # Technical deep dive & implementation
 ├── tests/                     # Test suite
 │   ├── test_config.py
 │   ├── test_sudoku_game.py
-<<<<<<< HEAD
-=======
 │   ├── test_pygame_ui.py
->>>>>>> 9e839a1566699572ecf80c319b1a8ea47ee095ac
 │   ├── test_rl_agent.py
 │   └── test_backtracking_solver.py
 └── models/                    # Saved trained models
@@ -107,6 +97,7 @@ python -m pytest tests/ -v
   - +10 for placing the correct digit (matches solution)
   - −10 for a wrong digit or invalid move
   - +200 for puzzle completion
+- **Stability**: Reward clipping (±50), target Q-value clipping, per-episode epsilon decay
 
 ### Deterministic Backtracking Solver
 - **Algorithm**: Constraint propagation (naked singles) + recursive backtracking
@@ -119,34 +110,6 @@ A Jupyter notebook (`notebooks/solver_comparison.ipynb`) benchmarks both solvers
 on easy / medium / hard puzzles and compares correctness, speed, and reliability.
 When a trained model exists at `models/sudoku_dqn_{difficulty}.pth` the notebook
 loads it automatically; otherwise it falls back to untrained weights.
-Run it with:
-```bash
-cd notebooks && jupyter notebook solver_comparison.ipynb
-```
-
-### Deterministic Backtracking Solver
-- **Algorithm**: Constraint propagation (naked singles) + recursive backtracking
-- **Heuristic**: Minimum Remaining Values (MRV) – always branches on the cell with the fewest candidates
-- **Guarantee**: Finds a valid solution whenever one exists (100 % success rate)
-- **Speed**: Solves most 9×9 puzzles in < 5 ms
-
-### Solver Comparison Notebook
-A Jupyter notebook (`notebooks/solver_comparison.ipynb`) benchmarks both solvers
-on easy / medium / hard puzzles and compares correctness, speed, and reliability.
-Run it with:
-```bash
-cd notebooks && jupyter notebook solver_comparison.ipynb
-```
-
-### Deterministic Backtracking Solver
-- **Algorithm**: Constraint propagation (naked singles) + recursive backtracking
-- **Heuristic**: Minimum Remaining Values (MRV) – always branches on the cell with the fewest candidates
-- **Guarantee**: Finds a valid solution whenever one exists (100 % success rate)
-- **Speed**: Solves most 9×9 puzzles in < 5 ms
-
-### Solver Comparison Notebook
-A Jupyter notebook (`notebooks/solver_comparison.ipynb`) benchmarks both solvers
-on easy / medium / hard puzzles and compares correctness, speed, and reliability.
 Run it with:
 ```bash
 cd notebooks && jupyter notebook solver_comparison.ipynb
@@ -171,17 +134,11 @@ cd notebooks && jupyter notebook solver_comparison.ipynb
 ## Configuration
 
 Edit `src/config.py` to customize:
-<<<<<<< HEAD
-- Neural network architecture
-- Learning hyperparameters (α, γ, ε)
-- Replay buffer size
-- Training episodes
-=======
 - Neural network architecture (conv channels, hidden layer sizes)
-- Learning hyperparameters (LR = 0.0005, γ = 0.99, ε decay = 0.995)
-- Replay buffer size (50 000) and batch size (128)
-- Target network sync frequency (every 100 steps)
->>>>>>> 9e839a1566699572ecf80c319b1a8ea47ee095ac
+- Learning hyperparameters (LR = 0.0001, γ = 0.95, ε decay = 0.999 per episode)
+- Replay buffer size (50 000) and batch size (64)
+- Target network sync frequency (every 500 steps)
+- Reward clipping (±50)
 - UI theme and animation speed
 
 ## Performance Metrics
@@ -192,6 +149,11 @@ Trained agent solves:
 - **Hard puzzles** (20 givens): ~70% success rate
 
 **Note**: RL is interesting for learning puzzle patterns, but deterministic backtracking remains faster for guaranteed solutions.
+
+## Documentation
+
+- [Technical Deep Dive](docs/TECHNICAL_GUIDE.md) – architecture, algorithms, and implementation details
+- [Advanced Tips & Best Practices](docs/ADVANCED_GUIDE.md) – curriculum learning, hybrid approaches, and research extensions
 
 ## References
 
