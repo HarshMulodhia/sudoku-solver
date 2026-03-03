@@ -8,8 +8,6 @@ solver** (constraint propagation + MRV heuristic) with a **Deep Q-Network
 **pygame UI** featuring a cyberpunk dark/light theme, particle effects,
 and real-time solving visualisation.
 
-![CI](https://github.com/HarshMulodhia/sudoku-solver/actions/workflows/ci.yml/badge.svg)
-
 ## Prerequisites
 
 ```bash
