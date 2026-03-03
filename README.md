@@ -135,10 +135,10 @@ cd notebooks && jupyter notebook solver_comparison.ipynb
 
 Edit `src/config.py` to customize:
 - Neural network architecture (conv channels, hidden layer sizes)
-- Learning hyperparameters (LR = 0.0001, γ = 0.95, ε decay = 0.999 per episode)
-- Replay buffer size (50 000) and batch size (64)
-- Target network sync frequency (every 500 steps)
-- Reward clipping (±50)
+- Learning hyperparameters (LR = 0.001, γ = 0.99, ε decay = 0.995 per episode)
+- Replay buffer size (50 000) and batch size (128)
+- Target network sync frequency (every 100 steps)
+- Reward clipping (±250)
 - UI theme and animation speed
 
 ## Performance Metrics

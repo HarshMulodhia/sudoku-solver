@@ -35,13 +35,13 @@ class TestRLConfig:
 
     def test_optimized_hyperparameters(self):
         cfg = RLConfig()
-        assert cfg.LEARNING_RATE == 0.0001
-        assert cfg.GAMMA == 0.95
-        assert cfg.EPSILON_DECAY == 0.999
-        assert cfg.BATCH_SIZE == 64
+        assert cfg.LEARNING_RATE == 0.001
+        assert cfg.GAMMA == 0.99
+        assert cfg.EPSILON_DECAY == 0.995
+        assert cfg.BATCH_SIZE == 128
         assert cfg.MEMORY_SIZE == 50000
-        assert cfg.TARGET_UPDATE_FREQ == 500
-        assert cfg.REWARD_CLIP == 50.0
+        assert cfg.TARGET_UPDATE_FREQ == 100
+        assert cfg.REWARD_CLIP == 250.0
 
 
 class TestUIConfig:
