@@ -3,8 +3,8 @@
 ![CI](https://github.com/HarshMulodhia/sudoku-solver/actions/workflows/ci.yml/badge.svg)
 
 A modular Sudoku-solving toolkit that pairs a **deterministic backtracking
-solver** (constraint propagation + MRV heuristic) with a **Deep Q-Network
-(DQN) reinforcement-learning agent**, all wrapped in an interactive
+solver** (constraint propagation + MRV heuristic) with **reinforcement-learning
+agents** (**PPO** and **Double DQN**), all wrapped in an interactive
 **pygame UI** featuring a cyberpunk dark/light theme, particle effects,
 and real-time solving visualisation.
 
@@ -42,7 +42,7 @@ sudoku-rl-solver/
 │   ├── __init__.py
 │   ├── config.py              # Configuration & hyperparameters
 │   ├── sudoku_game.py         # Game logic & constraint handling
-│   ├── rl_agent.py            # Double DQN agent implementation
+│   ├── rl_agent.py            # PPO + Double DQN agent implementations
 │   ├── backtracking_solver.py # Deterministic backtracking solver
 │   └── pygame_ui.py           # Interactive pygame interface
 ├── scripts/                   # Executable scripts
@@ -60,18 +60,21 @@ sudoku-rl-solver/
 │   ├── test_rl_agent.py
 │   └── test_backtracking_solver.py
 └── models/                    # Saved trained models
-    └── sudoku_dqn_*.pth
+    └── sudoku_{ppo,dqn}_*.pth
 ```
 
 ## Quick Start
 
 ### 1. Train the Agent (Optional)
 ```bash
-# Train on CPU
+# Train with PPO (recommended, default)
 python scripts/train.py --episodes 1000 --difficulty medium --device cpu
 
-# Train on GPU (requires CUDA-enabled conda env)
+# Train with PPO on GPU
 python scripts/train.py --episodes 1000 --difficulty medium --device cuda
+
+# Train with DQN (legacy)
+python scripts/train.py --episodes 1000 --difficulty medium --device cpu --algorithm dqn
 ```
 
 ### 2. Run Solver with UI
@@ -88,16 +91,18 @@ python -m pytest tests/ -v
 ## Features
 
 ### RL Component
-- **Algorithm**: Double DQN with Experience Replay and SmoothL1 (Huber) loss
-- **Architecture**: 3 Conv2d layers (10→16→32→64) + 3 FC layers (256→128→64) ≈ 1.4 M parameters
+- **Algorithms**: PPO (Proximal Policy Optimization) and Double DQN with Experience Replay
+- **PPO Architecture**: Actor-Critic with shared CNN backbone — 3 Conv2d layers + separate actor/critic FC heads
+- **DQN Architecture**: 3 Conv2d layers (10→16→32→64) + 3 FC layers (256→128→64) ≈ 1.4 M parameters
 - **State Representation**: 9×9×10 one-hot tensor (empty-cell indicator + digit channels)
 - **Action Space**: 81 × 9 = 729 (cell × digit selections)
+- **PPO Features**: Clipped surrogate objective, GAE advantage estimation, entropy bonus, invalid-action masking
 - **Reward System**:
   - +1 for a valid move
   - +10 for placing the correct digit (matches solution)
   - −10 for a wrong digit or invalid move
   - +200 for puzzle completion
-- **Stability**: Reward clipping (±50), target Q-value clipping, per-episode epsilon decay
+- **Stability**: Reward clipping (±50), target Q-value clipping, per-episode epsilon decay (DQN), gradient clipping (PPO)
 
 ### Deterministic Backtracking Solver
 - **Algorithm**: Constraint propagation (naked singles) + recursive backtracking
@@ -134,10 +139,12 @@ cd notebooks && jupyter notebook solver_comparison.ipynb
 ## Configuration
 
 Edit `src/config.py` to customize:
+- RL algorithm choice (`--algorithm ppo` or `--algorithm dqn`)
 - Neural network architecture (conv channels, hidden layer sizes)
-- Learning hyperparameters (LR = 0.001, γ = 0.99, ε decay = 0.995 per episode)
+- PPO hyperparameters (clip ε = 0.2, GAE λ = 0.95, entropy coef = 0.01, LR = 0.0003)
+- DQN hyperparameters (LR = 0.001, γ = 0.99, ε decay = 0.995 per episode)
 - Replay buffer size (50 000) and batch size (128)
-- Target network sync frequency (every 100 steps)
+- Target network sync frequency (every 100 steps, DQN only)
 - Reward clipping (±250)
 - UI theme and animation speed
 

@@ -3,8 +3,8 @@
 ## Architecture Overview
 
 A modular Sudoku-solving toolkit that pairs a deterministic backtracking
-solver with a Double DQN reinforcement-learning agent, all wrapped in an
-interactive pygame UI featuring a cyberpunk dark/light theme.
+solver with reinforcement-learning agents (**PPO** and **Double DQN**), all
+wrapped in an interactive pygame UI featuring a cyberpunk dark/light theme.
 
 ### System Components
 
@@ -19,12 +19,13 @@ interactive pygame UI featuring a cyberpunk dark/light theme.
         ┌──────┴──────┐
         ▼             ▼
 ┌─────────────┐  ┌──────────────────┐  ┌──────────────────┐
-│ Game Engine │  │  RL Agent (DQN)  │  │ Backtracking     │
+│ Game Engine │  │  RL Agents       │  │ Backtracking     │
 │ (Sudoku)    │  │                  │  │ Solver           │
-│ • Logic     │  │ • Double DQN     │  │ • Propagation    │
-│ • Validation│  │ • Experience     │  │ • MRV heuristic  │
-│ • Rewards   │  │   Replay         │  │ • 100 % success  │
-└─────────────┘  │ • Training       │  └──────────────────┘
+│ • Logic     │  │ • PPO (default)  │  │ • Propagation    │
+│ • Validation│  │ • Double DQN     │  │ • MRV heuristic  │
+│ • Rewards   │  │ • Actor-Critic   │  │ • 100 % success  │
+└─────────────┘  │ • Experience     │  └──────────────────┘
+                 │   Replay (DQN)   │
                  └──────────────────┘
 ```
 
@@ -121,7 +122,77 @@ the backtracking solver against the RL (DQN) agent.
 
 ## 2. Reinforcement Learning Agent (src/rl_agent.py)
 
-### Deep Q-Network (DQN)
+### Proximal Policy Optimization (PPO) — Default
+
+**Architecture Overview:**
+
+```
+Input: 9×9×10 state tensor
+    ↓
+Conv2d(10→16, 3×3) + ReLU        ← Shared backbone
+    ↓
+Conv2d(16→32, 3×3) + ReLU
+    ↓
+Conv2d(32→64, 3×3) + ReLU
+    ↓
+Flatten → 64×9×9 = 5,184 features  (padding=1 preserves spatial dims)
+    ↓                                    ↓
+ Actor Head                          Critic Head
+FC(5184→256)+ReLU+Drop(0.1)    FC(5184→256)+ReLU+Drop(0.1)
+    ↓                                    ↓
+FC(256→128)+ReLU                FC(256→128)+ReLU
+    ↓                                    ↓
+FC(128→729) → action logits    FC(128→1) → state value
+```
+
+PPO is an on-policy actor-critic algorithm that directly optimizes the
+policy using a clipped surrogate objective.  It avoids the instabilities
+of DQN's off-policy learning and eliminates the need for experience
+replay and target networks.
+
+**Why PPO over DQN for Sudoku:**
+
+| Aspect | PPO | DQN |
+|--------|-----|-----|
+| Policy type | Direct (actor-critic) | Indirect (Q-values → greedy) |
+| Exploration | Entropy bonus + stochastic sampling | ε-greedy (random) |
+| Invalid actions | Masked out via logit masking | Filtered after Q-value ranking |
+| Stability | Clipped objective prevents large updates | Target network + replay buffer |
+| On/Off-policy | On-policy (fresh data) | Off-policy (replay buffer) |
+
+**PPO Training Algorithm:**
+
+```python
+# 1. Collect trajectory using current policy π_old
+for step in range(rollout_length):
+    action ~ π_old(state)           # sample from masked policy
+    reward, next_state = env.step(action)
+    store (state, action, log_prob, reward, value)
+
+# 2. Compute advantages using GAE(γ, λ)
+δ_t = r_t + γ·V(s_{t+1}) - V(s_t)
+A_t = Σ_{l=0}^{T-t} (γλ)^l · δ_{t+l}
+
+# 3. PPO update (K epochs over mini-batches)
+for epoch in range(K):
+    ratio = π_new(a|s) / π_old(a|s)
+    L_clip = min(ratio·A, clip(ratio, 1±ε)·A)
+    L = -L_clip + c1·MSE(V, R) - c2·H[π]
+    ∇L.backward(); clip_grad_norm_(0.5); step()
+```
+
+**Hyperparameters (PPOConfig):**
+- Learning rate: 0.0003 (Adam optimizer)
+- Gamma (γ): 0.99 (discount factor)
+- GAE Lambda (λ): 0.95
+- Clip epsilon (ε): 0.2
+- PPO epochs: 4
+- Mini-batch size: 64
+- Value loss coefficient: 0.5
+- Entropy coefficient: 0.01
+- Max gradient norm: 0.5
+
+### Deep Q-Network (DQN) — Legacy
 
 **Architecture Overview:**
 
@@ -293,7 +364,37 @@ class AnimationState:
 
 ## 4. Training Pipeline (scripts/train.py)
 
-### Workflow
+### Algorithm Selection
+
+```bash
+# PPO training (default, recommended)
+python scripts/train.py --algorithm ppo --episodes 1000 --difficulty medium
+
+# DQN training (legacy)
+python scripts/train.py --algorithm dqn --episodes 1000 --difficulty medium
+```
+
+### PPO Workflow
+
+```
+1. Initialize PPO actor-critic agent
+2. For each episode:
+   a. Generate new puzzle
+   b. Get initial board state
+   c. For each timestep:
+      i. Get valid actions
+      ii. Select action from masked policy (sample from π)
+      iii. Execute action
+      iv. Compute reward
+      v. Store (state, action, log_prob, reward, value, done, mask)
+   d. Compute GAE advantages
+   e. Run PPO update (K=4 epochs, mini-batch=64)
+   f. Clear rollout buffer
+   g. Log metrics
+3. Save trained model
+```
+
+### DQN Workflow
 
 ```
 1. Initialize DQN agent
@@ -320,8 +421,8 @@ Tracked per 50 episodes:
 - Average episode reward
 - Average steps per episode
 - Average training loss
-- Epsilon decay schedule
-- Model saved to models/sudoku_dqn_{difficulty}.pth
+- Epsilon decay schedule (DQN only)
+- Model saved to models/sudoku_{ppo,dqn}_{difficulty}.pth
 ```
 
 ### Expected Performance
@@ -396,7 +497,7 @@ BOARD_SIZE = 9
 SUBGRID_SIZE = 3
 ```
 
-**RL Config:**
+**RL Config (DQN):**
 ```python
 INPUT_SHAPE = (9, 9, 10)
 OUTPUT_SIZE = 729
@@ -411,6 +512,21 @@ BATCH_SIZE = 128
 MEMORY_SIZE = 50000
 TARGET_UPDATE_FREQ = 100
 REWARD_CLIP = 250.0
+```
+
+**PPO Config:**
+```python
+CLIP_EPSILON = 0.2
+VALUE_LOSS_COEF = 0.5
+ENTROPY_COEF = 0.01
+GAE_LAMBDA = 0.95
+PPO_EPOCHS = 4
+MINI_BATCH_SIZE = 64
+MAX_GRAD_NORM = 0.5
+ROLLOUT_LENGTH = 128
+LEARNING_RATE = 0.0003
+GAMMA = 0.99
+MAX_STEPS = 81
 ```
 
 **UI Config:**
@@ -440,14 +556,17 @@ pip install -r requirements.txt
 ### Training (Optional)
 
 ```bash
-# Train on medium difficulty
+# Train PPO on medium difficulty (recommended)
 python scripts/train.py --episodes 1000 --difficulty medium
 
-# Train on hard difficulty with GPU
+# Train PPO on hard difficulty with GPU
 python scripts/train.py --episodes 2000 --difficulty hard --device cuda
+
+# Train DQN (legacy)
+python scripts/train.py --algorithm dqn --episodes 1000 --difficulty medium
 ```
 
-This generates: `models/sudoku_dqn_medium.pth`
+This generates: `models/sudoku_ppo_medium.pth` (or `sudoku_dqn_medium.pth`)
 
 ### Running Solver
 
@@ -545,11 +664,11 @@ Q(s,a) ← Q_target(s',a')  (frozen for N steps)
 2. **Prioritized Experience Replay**: Sample important experiences more
 3. **Noisy Networks**: Learned exploration
 
-*Note: Double DQN is already implemented in the current codebase.*
+*Note: Double DQN and PPO are already implemented in the current codebase.*
 
 ### Advanced Extensions
 
-1. **Policy Gradient (PPO)**: Actor-critic instead of Q-learning
+1. **SAC (Soft Actor-Critic)**: Maximum entropy RL for improved exploration
 2. **Attention Mechanism**: Focus on constraint regions
 3. **Graph Neural Networks**: Leverage Sudoku structure as graph
 4. **Curriculum Learning**: Easy → hard difficulty progression
@@ -566,11 +685,13 @@ Q(s,a) ← Q_target(s',a')  (frozen for N steps)
 
 ## References
 
-1. **DQN Paper**: Mnih et al. (2015) - "Human-level control through deep reinforcement learning"
-2. **Double DQN**: van Hasselt et al. (2016) - Reducing overestimation
-3. **Dueling Networks**: Wang et al. (2016) - Advantage & value streams
-4. **Prioritized Replay**: Schaul et al. (2016) - Important experience sampling
-5. **Sudoku Complexity**: Eppstein (2011) - Constraint satisfaction analysis
+1. **PPO Paper**: Schulman et al. (2017) - "Proximal Policy Optimization Algorithms"
+2. **DQN Paper**: Mnih et al. (2015) - "Human-level control through deep reinforcement learning"
+3. **Double DQN**: van Hasselt et al. (2016) - Reducing overestimation
+4. **GAE Paper**: Schulman et al. (2016) - "High-Dimensional Continuous Control Using Generalized Advantage Estimation"
+5. **Dueling Networks**: Wang et al. (2016) - Advantage & value streams
+6. **Prioritized Replay**: Schaul et al. (2016) - Important experience sampling
+7. **Sudoku Complexity**: Eppstein (2011) - Constraint satisfaction analysis
 
 ---
 
@@ -592,6 +713,7 @@ Q(s,a) ← Q_target(s',a')  (frozen for N steps)
 → Increase FPS cap to match monitor refresh
 
 ### Model converges but doesn't solve
+→ Try PPO (`--algorithm ppo`) which handles discrete action spaces better than DQN
 → Problem is inherent: RL struggles with Sudoku's discrete logic
 → Use hybrid: RL for heuristic, backtracking for validation
 → Increase episode count to 3000+
