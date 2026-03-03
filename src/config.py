@@ -35,9 +35,9 @@ class RLConfig:
     
     def __post_init__(self):
         if self.HIDDEN_LAYERS is None:
-            self.HIDDEN_LAYERS = [256, 128, 64]
+            self.HIDDEN_LAYERS = [256, 256, 128]
         if self.CONV_CHANNELS is None:
-            self.CONV_CHANNELS = [16, 32, 64]
+            self.CONV_CHANNELS = [32, 64, 128]
 
 @dataclass
 class ThemeColors:

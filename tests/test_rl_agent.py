@@ -179,12 +179,12 @@ class TestSudokuRLAgent:
             assert torch.equal(p1, p2)
 
     def test_reduced_network_size(self):
-        """Network should have fewer than 2M parameters."""
+        """Network should have fewer than 4 million parameters."""
         agent = SudokuRLAgent(device="cpu")
         param_count = sum(
             p.numel() for p in agent.q_network.parameters()
         )
-        assert param_count < 2_000_000
+        assert param_count < 4_000_000
 
     def test_auto_detect_device(self):
         """auto_detect_device should return a valid device string."""

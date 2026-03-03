@@ -18,16 +18,16 @@ class TestRLConfig:
         cfg = RLConfig()
         assert cfg.INPUT_SHAPE == (9, 9, 10)
         assert cfg.OUTPUT_SIZE == 729
-        assert cfg.HIDDEN_LAYERS == [256, 128, 64]
-        assert cfg.CONV_CHANNELS == [16, 32, 64]
+        assert cfg.HIDDEN_LAYERS == [256, 256, 128]
+        assert cfg.CONV_CHANNELS == [32, 64, 128]
 
     def test_post_init_hidden_layers(self):
         cfg = RLConfig(HIDDEN_LAYERS=None)
-        assert cfg.HIDDEN_LAYERS == [256, 128, 64]
+        assert cfg.HIDDEN_LAYERS == [256, 256, 128]
 
     def test_post_init_conv_channels(self):
         cfg = RLConfig(CONV_CHANNELS=None)
-        assert cfg.CONV_CHANNELS == [16, 32, 64]
+        assert cfg.CONV_CHANNELS == [32, 64, 128]
 
     def test_custom_hidden_layers(self):
         cfg = RLConfig(HIDDEN_LAYERS=[64, 32, 16])
