@@ -98,10 +98,9 @@ python -m pytest tests/ -v
 ## Features
 
 ### RL Component
-- **Algorithm**: Double DQN with Experience Replay and SmoothL1 (Huber) loss
-- **Architecture**: 3 Conv2d layers (10→16→32→64) + 3 FC layers (256→128→64) ≈ 1.4 M parameters
-- **State Representation**: 9×9×10 one-hot tensor (empty-cell indicator + digit channels)
-- **Action Space**: 81 × 9 = 729 (cell × digit selections)
+- **Algorithm**: Deep Q-Network (DQN) with Experience Replay
+- **State Representation**: 9×9×10 tensor (position × 10 digit possibilities)
+- **Action Space**: 81 × 9 (cell × digit selections)
 - **Reward System**:
   - +1 for a valid move
   - +10 for placing the correct digit (matches solution)
@@ -153,9 +152,7 @@ cd notebooks && jupyter notebook solver_comparison.ipynb
 ```
 
 ### UI Features
-- **Modern Design**: Dark/Light theme toggle with neon accents
-- **3×3 Box Borders**: Thick borders and alternating backgrounds differentiate 3×3 blocks
-- **Digit Highlighting**: Selecting a cell highlights all cells with the same digit
+- **Modern Design**: Dark theme with neon accents
 - **Animations**: 
   - Smooth cell highlighting
   - Particle effects on valid solutions
@@ -165,8 +162,7 @@ cd notebooks && jupyter notebook solver_comparison.ipynb
   - Mouse/keyboard input
   - Real-time hint system
   - Step-by-step execution
-  - Difficulty selection (Easy/Medium/Hard buttons)
-  - Undo support (button and Ctrl+Z)
+  - Difficulty selection
 
 ## Configuration
 

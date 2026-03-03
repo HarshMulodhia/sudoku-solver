@@ -4,49 +4,8 @@ import pygame
 import numpy as np
 from typing import Tuple, Optional, List
 import math
-import time as _time
 from config import ui_config, game_config
 from sudoku_game import SudokuGame
-
-
-class Button:
-    """Clickable UI button"""
-
-    def __init__(self, x: int, y: int, width: int, height: int, text: str,
-                 active: bool = False):
-        self.rect = pygame.Rect(x, y, width, height)
-        self.text = text
-        self.active = active
-        self.hovered = False
-
-    def is_clicked(self, pos: Tuple[int, int]) -> bool:
-        """Check if the button was clicked"""
-        return self.rect.collidepoint(pos)
-
-    def update_hover(self, pos: Tuple[int, int]):
-        """Update hover state"""
-        self.hovered = self.rect.collidepoint(pos)
-
-    def draw(self, surface: pygame.Surface, font: pygame.font.Font,
-             colors):
-        """Draw the button"""
-        if self.active:
-            bg = colors.COLOR_ACCENT
-            text_color = colors.COLOR_BG
-        elif self.hovered:
-            bg = colors.COLOR_CELL_HOVER
-            text_color = colors.COLOR_TEXT
-        else:
-            bg = colors.COLOR_PANEL_BG
-            text_color = colors.COLOR_TEXT
-
-        pygame.draw.rect(surface, bg, self.rect, border_radius=6)
-        pygame.draw.rect(surface, colors.COLOR_ACCENT, self.rect,
-                         width=2, border_radius=6)
-
-        text_surf = font.render(self.text, True, text_color)
-        text_rect = text_surf.get_rect(center=self.rect.center)
-        surface.blit(text_surf, text_rect)
 
 class Particle:
     """Particle effect for animations"""
@@ -468,7 +427,7 @@ class SudokuUI:
                 self.draw_cell(surface, row, col)
     
     def draw_ui_info(self, surface: pygame.Surface, fps: float, status: str = ""):
-        """Draw UI information panel with score and time"""
+        """Draw UI information panel"""
         panel_height = 120
         panel_rect = pygame.Rect(self.board_x + 9 * self.cell_size + 50, 
                                  self.board_y, 300, panel_height)
@@ -518,8 +477,8 @@ class SudokuUI:
         surface.blit(time_surf, (panel_rect.x + 160, panel_rect.y + 55))
         
         if status:
-            status_surf = self.font_small.render(status, True, self.colors.COLOR_SOLVED)
-            surface.blit(status_surf, (panel_rect.x + 20, panel_rect.y + 75))
+            status_text = self.get_text_cached(status, self.font_small, self.colors.COLOR_SOLVED)
+            surface.blit(status_text, (panel_rect.x + 20, panel_rect.y + 75))
 
         # Mode label
         mode_label = f"Mode: {self.mode.replace('_', ' ').title()}"
@@ -583,9 +542,6 @@ class SudokuUI:
         
         # Draw info panel
         self.draw_ui_info(surface, fps, status)
-
-        # Draw buttons
-        self.draw_buttons(surface)
         
         # Draw instructions
         self.draw_instructions(surface)
@@ -627,49 +583,12 @@ class SudokuUI:
     def handle_mouse_motion(self, pos: Tuple[int, int]):
         """Handle mouse motion"""
         self.hover_cell = self.get_cell_from_pos(pos[0], pos[1])
-        for btn in self.buttons:
-            btn.update_hover(pos)
     
-    def handle_mouse_click(self, pos: Tuple[int, int]) -> Optional[str]:
-        """Handle mouse click.
-
-        Returns:
-            A string action name if a button was clicked, else None.
-        """
-        # Check buttons first
-        if self.btn_theme.is_clicked(pos):
-            self.toggle_theme()
-            return 'toggle_theme'
-        if self.btn_easy.is_clicked(pos):
-            self.set_difficulty('easy')
-            return 'difficulty_easy'
-        if self.btn_medium.is_clicked(pos):
-            self.set_difficulty('medium')
-            return 'difficulty_medium'
-        if self.btn_hard.is_clicked(pos):
-            self.set_difficulty('hard')
-            return 'difficulty_hard'
-        if self.btn_manual.is_clicked(pos):
-            self.set_mode('manual')
-            return 'mode_manual'
-        if self.btn_rl.is_clicked(pos):
-            self.set_mode('rl')
-            return 'mode_rl'
-        if self.btn_backtrack.is_clicked(pos):
-            self.set_mode('backtracking')
-            return 'mode_backtracking'
-        if self.btn_new_puzzle.is_clicked(pos):
-            return 'new_puzzle'
-        if self.btn_reset_entries.is_clicked(pos):
-            return 'reset_entries'
-        if self.btn_undo.is_clicked(pos):
-            return 'undo'
-
-        # Otherwise select a cell on the board
+    def handle_mouse_click(self, pos: Tuple[int, int]):
+        """Handle mouse click"""
         cell = self.get_cell_from_pos(pos[0], pos[1])
         if cell:
             self.selected_cell = cell
-        return None
     
     def handle_key_press(self, key: int) -> Optional[int]:
         """
