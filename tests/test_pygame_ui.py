@@ -3,7 +3,10 @@
 import pytest
 import sys
 import numpy as np
+<<<<<<< HEAD
+=======
 import time as _time
+>>>>>>> 9e839a1566699572ecf80c319b1a8ea47ee095ac
 from unittest.mock import patch, MagicMock
 
 # Mock pygame before importing pygame_ui
@@ -13,7 +16,11 @@ sys.modules['pygame.display'] = MagicMock()
 
 from config import ui_config, DARK_THEME, LIGHT_THEME
 from sudoku_game import SudokuGame
+<<<<<<< HEAD
+from pygame_ui import SudokuUI
+=======
 from pygame_ui import SudokuUI, Button
+>>>>>>> 9e839a1566699572ecf80c319b1a8ea47ee095ac
 
 
 @pytest.fixture
@@ -27,10 +34,13 @@ def ui():
         ui.hover_cell = None
         ui.colors = ui_config.get_theme()
         ui.text_cache = {}
+<<<<<<< HEAD
+=======
         ui.mode = 'manual'
         ui.start_time = _time.time()
         ui.score = 0
         ui.undo_stack = []
+>>>>>>> 9e839a1566699572ecf80c319b1a8ea47ee095ac
     return ui
 
 
@@ -143,6 +153,8 @@ class TestToggleTheme:
         ui.toggle_theme()
         assert ui_config.dark_mode is True
         assert ui.colors == original
+<<<<<<< HEAD
+=======
 
 
 class TestButton:
@@ -332,3 +344,4 @@ class TestUndoStack:
         row, col, prev = ui.undo_stack.pop()
         assert (row, col, prev) == (4, 5, 6)
         assert len(ui.undo_stack) == 1
+>>>>>>> 9e839a1566699572ecf80c319b1a8ea47ee095ac

@@ -79,6 +79,8 @@ class TestSudokuGameMoves:
             assert game.place_digit(row, col, 0)
             assert game.board[row, col] == 0
 
+<<<<<<< HEAD
+=======
     def test_force_place_invalid_digit(self):
         """force=True allows placing a digit that violates constraints"""
         game = SudokuGame("easy")
@@ -100,6 +102,7 @@ class TestSudokuGameMoves:
         given = np.argwhere(game.original_board > 0)[0]
         assert not game.place_digit(given[0], given[1], 1, force=True)
 
+>>>>>>> 9e839a1566699572ecf80c319b1a8ea47ee095ac
 
 class TestSudokuGameState:
     """Test state queries."""

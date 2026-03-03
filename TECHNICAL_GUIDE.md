@@ -2,29 +2,27 @@
 
 ## Architecture Overview
 
-A modular Sudoku-solving toolkit that pairs a deterministic backtracking
-solver with a Double DQN reinforcement-learning agent, all wrapped in an
-interactive pygame UI featuring a cyberpunk dark/light theme.
+Your Sudoku RL solver is structured as a **modular, production-ready system** combining deep reinforcement learning with a high-tech pygame interface.
 
 ### System Components
 
 ```
 ┌─────────────────────────────────────────────────────┐
 │          Interactive pygame UI (1200×900)           │
-│  - Dark / light theme toggle with neon accents      │
+│  - Cyberpunk dark theme with neon accents           │
 │  - Particle effects & smooth animations             │
 │  - Real-time solving visualization                  │
 └──────────────┬──────────────────────────────────────┘
                │
         ┌──────┴──────┐
         ▼             ▼
-┌─────────────┐  ┌──────────────────┐  ┌──────────────────┐
-│ Game Engine │  │  RL Agent (DQN)  │  │ Backtracking     │
-│ (Sudoku)    │  │                  │  │ Solver           │
-│ • Logic     │  │ • Double DQN     │  │ • Propagation    │
-│ • Validation│  │ • Experience     │  │ • MRV heuristic  │
-│ • Rewards   │  │   Replay         │  │ • 100 % success  │
-└─────────────┘  │ • Training       │  └──────────────────┘
+┌─────────────┐  ┌──────────────────┐
+│ Game Engine │  │  RL Agent (DQN)  │
+│ (Sudoku)    │  │                  │
+│ • Logic     │  │ • Q-Network      │
+│ • Validation│  │ • Experience     │
+│ • Rewards   │  │   Replay         │
+└─────────────┘  │ • Training       │
                  └──────────────────┘
 ```
 
@@ -128,28 +126,28 @@ the backtracking solver against the RL (DQN) agent.
 ```
 Input: 9×9×10 state tensor
     ↓
-Conv2d(10→16, 3×3) + ReLU
-    ↓
-Conv2d(16→32, 3×3) + ReLU
+Conv2d(10→32, 3×3) + ReLU
     ↓
 Conv2d(32→64, 3×3) + ReLU
     ↓
-Flatten → 64×9×9 = 5,184 features  (padding=1 preserves spatial dims)
+Conv2d(64→128, 3×3) + ReLU
     ↓
-FC(5184→256) + ReLU + Dropout(0.1)
+Flatten → 128×9×9 = 10,368 features
     ↓
-FC(256→128) + ReLU + Dropout(0.1)
+FC(10368→256) + ReLU + Dropout(0.3)
     ↓
-FC(128→64) + ReLU
+FC(256→256) + ReLU + Dropout(0.3)
+    ↓
+FC(256→128) + ReLU
     ↓
 Output: 729 Q-values (81 cells × 9 digits)
 ```
 
-**Total Parameters:** ~1.4M
+**Total Parameters:** ~850K
 
 ### Training Algorithm
 
-**Experience Replay + Double DQN + Target Network:**
+**Experience Replay + Target Network:**
 
 ```python
 # 1. Select action using ε-greedy policy
@@ -162,45 +160,41 @@ reward, next_state, done = environment.step(action)
 memory.push(state, action, reward, next_state, done)
 
 # 4. Sample batch from replay buffer
-batch = memory.sample(batch_size=128)
+batch = memory.sample(batch_size=32)
 
-# 5. Compute TD target (Double DQN)
-best_action = argmax(Q_network(next_state))
-y = reward + γ × Q_target(next_state, best_action)
+# 5. Compute TD target
+y = reward + γ × max_a' Q_target(next_state, a')
 
-# 6. Update Q-network (Huber / SmoothL1 loss)
-Loss = SmoothL1(Q(state, action), y)
+# 6. Update Q-network
+Loss = MSE(Q(state, action), y)
 ∇Loss.backward()
-clip_grad_norm_(params, 1.0)
 
-# 7. Every 100 steps: Q_target ← Q_network
+# 7. Every N steps: Q_target ← Q_network
 ```
 
 **Hyperparameters:**
-- Learning rate: 0.0005 (Adam optimizer)
+- Learning rate: 0.0001 (Adam optimizer)
 - Gamma (γ): 0.99 (discount factor)
-- Epsilon (ε): 1.0 → 0.05 (decay factor 0.995)
-- Batch size: 128
-- Replay buffer: 50K experiences
-- Target network update: Every 100 steps
+- Epsilon (ε): 1.0 → 0.01 (exploration decay)
+- Batch size: 32
+- Replay buffer: 100K experiences
+- Target network update: Every 1000 steps
 
 ### Reward Shaping
 
 ```python
-# Valid move: +1
-# Correct digit (matches solution): +10 (in addition to valid-move reward)
-# Wrong digit: -10 (in addition to valid-move reward)
-# Invalid move (rejected by constraint check): -10
-# Puzzle completion: +200
-# Row/Col/Box conflict (force-placed): -5 each (additional penalty)
+# Valid move: +10
+# Invalid move: -5
+# Puzzle completion: +100
+# Row conflict: -1
+# Column conflict: -1
+# Box conflict: -1
 ```
 
 **Design rationale:**
-- High completion reward encourages convergence
-- Large penalty for wrong/invalid moves discourages guessing
-- Small positive reward for valid moves maintains engagement
-- Conflict penalties (applied on top when using force-placement) guide
-  exploration away from violations
+- High reward for completion encourages convergence
+- Small penalties for conflicts guide exploration
+- Immediate +10 for valid moves maintains engagement
 
 ### Action Space
 
@@ -235,8 +229,6 @@ Frame rendering order (60 FPS):
 2. Draw cell backgrounds with colors:
    - Selected: Cyan highlight
    - Hover: Blue glow
-   - Digit match: Highlighted (same digit as selected cell)
-   - Same row/col/box: Highlighted
    - Given: Light blue
    - User-filled: Green
    - Default: Dark gray
@@ -244,9 +236,8 @@ Frame rendering order (60 FPS):
 4. Draw grid borders (2px normal, 4px for 3×3 boxes)
 5. Draw & update particles
 6. Render UI panel with info
-7. Draw buttons (theme, difficulty, mode, undo)
-8. Draw instructions
-9. Update display
+7. Draw instructions
+8. Update display
 ```
 
 ### Particle Effects
@@ -320,7 +311,6 @@ Tracked per 50 episodes:
 - Average steps per episode
 - Average training loss
 - Epsilon decay schedule
-- Model saved to models/sudoku_dqn_{difficulty}.pth
 ```
 
 ### Expected Performance
@@ -356,32 +346,10 @@ Tracked per 50 episodes:
 |-----|--------|
 | 1-9 | Place digit in selected cell |
 | Delete/Backspace | Clear selected cell |
-| Ctrl+Z | Undo last move |
 | R | Reset to original puzzle |
 | H | Get hint for selected cell |
-| Space | Auto-solve with active solver |
+| Space | Auto-solve with RL agent |
 | Q | Quit game |
-
-### Difficulty Selection
-
-The UI panel includes **Easy**, **Medium**, and **Hard** buttons. Clicking a
-difficulty button generates a new puzzle at that level:
-
-- **Easy**: 40 givens
-- **Medium**: 30 givens
-- **Hard**: 20 givens
-
-### Digit Highlighting
-
-Selecting a cell that contains a digit automatically highlights every other
-cell on the board that contains the same digit. This makes it easy to spot
-placements and conflicts at a glance.
-
-### Undo
-
-Every digit placement is recorded. Click the **Undo (Ctrl+Z)** button or
-press **Ctrl+Z** to revert the last move. The undo stack is cleared when a
-new puzzle is generated or the board is reset.
 
 ---
 
@@ -399,16 +367,13 @@ SUBGRID_SIZE = 3
 ```python
 INPUT_SHAPE = (9, 9, 10)
 OUTPUT_SIZE = 729
-CONV_CHANNELS = [16, 32, 64]
-HIDDEN_LAYERS = [256, 128, 64]
-LEARNING_RATE = 0.0005
+HIDDEN_LAYERS = [256, 256, 128]
+LEARNING_RATE = 0.0001
 GAMMA = 0.99
 EPSILON_START = 1.0
-EPSILON_END = 0.05
-EPSILON_DECAY = 0.995
-BATCH_SIZE = 128
-MEMORY_SIZE = 50000
-TARGET_UPDATE_FREQ = 100
+EPSILON_END = 0.01
+BATCH_SIZE = 32
+MEMORY_SIZE = 100000
 ```
 
 **UI Config:**
@@ -520,8 +485,8 @@ Q(s,a) ← Q_target(s',a')  (frozen for N steps)
 | Get possible values | O(1) | Set operations |
 | Board generation | O(10^40) worst, ~ms typical | Randomized backtracking |
 | State encoding | O(81) | Linear in board size |
-| Agent forward pass | O(1.4M) weights | ~5ms on GPU |
-| Training step | O(128×1.4M) | ~100ms per batch |
+| Agent forward pass | O(850k) weights | ~5ms on GPU |
+| Training step | O(32×850k) | ~100ms per batch |
 
 ### Space Complexity
 
@@ -529,9 +494,9 @@ Q(s,a) ← Q_target(s',a')  (frozen for N steps)
 |-----------|--------|-------|
 | Board state | 162 bytes | 9×9×2 int32 |
 | Encoded state | 3.24 KB | 9×9×10 float32 |
-| Q-network | ~5.6 MB | 1.4M parameters |
-| Replay buffer | ~750 MB | 50K experiences |
-| Total runtime | ~1 GB | On modern GPU |
+| Q-network | ~3.4 MB | 850K parameters |
+| Replay buffer | ~1.5 GB | 100K experiences × 15KB each |
+| Total runtime | ~2 GB | On modern GPU |
 
 ---
 
@@ -541,9 +506,8 @@ Q(s,a) ← Q_target(s',a')  (frozen for N steps)
 
 1. **Dueling DQN**: Separate value & advantage streams
 2. **Prioritized Experience Replay**: Sample important experiences more
-3. **Noisy Networks**: Learned exploration
-
-*Note: Double DQN is already implemented in the current codebase.*
+3. **Double DQN**: Reduce overestimation in targets
+4. **Noisy Networks**: Learned exploration
 
 ### Advanced Extensions
 
@@ -575,13 +539,13 @@ Q(s,a) ← Q_target(s',a')  (frozen for N steps)
 ## Troubleshooting
 
 ### Model not training (loss stays constant)
-→ Check learning rate (default 0.0005)
+→ Check learning rate (start with 0.001)
 → Verify reward signal provides gradient
 → Ensure valid actions exist
 
 ### GPU out of memory
-→ Reduce BATCH_SIZE to 64
-→ Reduce MEMORY_SIZE to 25000
+→ Reduce BATCH_SIZE to 16
+→ Reduce MEMORY_SIZE to 50000
 → Use fp16 training (requires autocast)
 
 ### UI is slow (FPS < 30)

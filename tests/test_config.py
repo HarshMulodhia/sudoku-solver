@@ -18,6 +18,13 @@ class TestRLConfig:
         cfg = RLConfig()
         assert cfg.INPUT_SHAPE == (9, 9, 10)
         assert cfg.OUTPUT_SIZE == 729
+<<<<<<< HEAD
+        assert cfg.HIDDEN_LAYERS == [256, 256, 128]
+
+    def test_post_init_hidden_layers(self):
+        cfg = RLConfig(HIDDEN_LAYERS=None)
+        assert cfg.HIDDEN_LAYERS == [256, 256, 128]
+=======
         assert cfg.HIDDEN_LAYERS == [256, 128, 64]
         assert cfg.CONV_CHANNELS == [16, 32, 64]
 
@@ -41,6 +48,7 @@ class TestRLConfig:
         assert cfg.BATCH_SIZE == 128
         assert cfg.MEMORY_SIZE == 50000
         assert cfg.TARGET_UPDATE_FREQ == 100
+>>>>>>> 9e839a1566699572ecf80c319b1a8ea47ee095ac
 
 
 class TestUIConfig:
@@ -89,6 +97,8 @@ class TestRewardConfig:
         cfg = RewardConfig()
         assert cfg.INVALID_MOVE_PENALTY < 0
 
+<<<<<<< HEAD
+=======
     def test_correct_move_reward_positive(self):
         cfg = RewardConfig()
         assert cfg.CORRECT_MOVE_REWARD > 0
@@ -101,6 +111,7 @@ class TestRewardConfig:
         cfg = RewardConfig()
         assert cfg.COMPLETION_REWARD > 0
 
+>>>>>>> 9e839a1566699572ecf80c319b1a8ea47ee095ac
 
 class TestDifficultyLevels:
     def test_all_difficulties_present(self):
