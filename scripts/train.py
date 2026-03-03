@@ -66,7 +66,7 @@ def train_agent(episodes: int = 1000, difficulty: str = 'medium', device: str = 
             
             # Get next state
             next_state = game.get_encoded_state()
-            done = game.is_complete() and game.is_solved()
+            done = game.is_solved()
             
             # Store experience
             agent.remember(state, (row, col, digit), reward, next_state, done)
