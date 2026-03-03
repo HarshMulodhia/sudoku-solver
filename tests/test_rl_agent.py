@@ -4,11 +4,7 @@ import numpy as np
 import torch
 import pytest
 
-<<<<<<< HEAD
-from rl_agent import DQNNetwork, ExperienceReplay, SudokuRLAgent
-=======
 from rl_agent import DQNNetwork, ExperienceReplay, SudokuRLAgent, auto_detect_device
->>>>>>> 9e839a1566699572ecf80c319b1a8ea47ee095ac
 from sudoku_game import SudokuGame
 from config import rl_config
 
@@ -110,12 +106,6 @@ class TestSudokuRLAgent:
         a2 = agent.select_action(state, valid_actions, training=False)
         assert a1 == a2
 
-<<<<<<< HEAD
-    def test_compute_reward_valid(self):
-        agent = SudokuRLAgent(device="cpu")
-        game = SudokuGame("easy")
-        reward = agent.compute_reward(game, (0, 0), 1, True)
-=======
     def test_compute_reward_valid_correct(self):
         agent = SudokuRLAgent(device="cpu")
         game = SudokuGame("easy")
@@ -124,7 +114,6 @@ class TestSudokuRLAgent:
         row, col = int(empty[0]), int(empty[1])
         correct_digit = int(game.solution[row, col])
         reward = agent.compute_reward(game, (row, col), correct_digit, True)
->>>>>>> 9e839a1566699572ecf80c319b1a8ea47ee095ac
         assert reward > 0
 
     def test_compute_reward_invalid(self):
@@ -133,8 +122,6 @@ class TestSudokuRLAgent:
         reward = agent.compute_reward(game, (0, 0), 1, False)
         assert reward < 0
 
-<<<<<<< HEAD
-=======
     def test_correct_move_higher_reward_than_wrong(self):
         """Placing the correct digit should yield higher reward"""
         agent = SudokuRLAgent(device="cpu")
@@ -169,7 +156,6 @@ class TestSudokuRLAgent:
         loss = agent.train_step()
         assert loss > 0
 
->>>>>>> 9e839a1566699572ecf80c319b1a8ea47ee095ac
     def test_remember_and_train(self):
         agent = SudokuRLAgent(device="cpu")
         state = np.zeros((9, 9, 10), dtype=np.float32)
@@ -191,8 +177,6 @@ class TestSudokuRLAgent:
             agent.q_network.parameters(), agent2.q_network.parameters()
         ):
             assert torch.equal(p1, p2)
-<<<<<<< HEAD
-=======
 
     def test_reduced_network_size(self):
         """Network should have fewer than 2M parameters."""
@@ -259,4 +243,3 @@ class TestSudokuRLAgent:
         # Verify weights are still on the correct device after training
         for p in agent.q_network.parameters():
             assert p.device.type == device_str
->>>>>>> 9e839a1566699572ecf80c319b1a8ea47ee095ac
