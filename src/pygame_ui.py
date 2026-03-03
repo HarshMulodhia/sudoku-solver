@@ -4,6 +4,7 @@ import pygame
 import numpy as np
 from typing import Tuple, Optional, List
 import math
+import time as _time
 from config import ui_config, game_config
 from sudoku_game import SudokuGame
 
@@ -79,6 +80,42 @@ class AnimationState:
         """Easing function (ease in-out cubic)"""
         t = self.progress
         return t * t * (3 - 2 * t)
+
+
+class Button:
+    """A simple clickable UI button."""
+
+    def __init__(self, x: int, y: int, w: int, h: int, text: str,
+                 active: bool = False):
+        self.rect = pygame.Rect(x, y, w, h)
+        self.text = text
+        self.active = active
+        self.hovered = False
+
+    def is_clicked(self, pos: Tuple[int, int]) -> bool:
+        """Return True if *pos* is inside the button."""
+        return self.rect.collidepoint(pos)
+
+    def update_hover(self, pos: Tuple[int, int]) -> None:
+        """Update the hovered state based on mouse *pos*."""
+        self.hovered = self.rect.collidepoint(pos)
+
+    def draw(self, surface: pygame.Surface, font, colors) -> None:
+        """Draw the button onto *surface*."""
+        if self.active:
+            bg = colors.COLOR_ACCENT
+            fg = colors.COLOR_BG
+        elif self.hovered:
+            bg = colors.COLOR_CELL_HOVER
+            fg = colors.COLOR_TEXT
+        else:
+            bg = colors.COLOR_PANEL_BG
+            fg = colors.COLOR_TEXT
+        pygame.draw.rect(surface, bg, self.rect)
+        pygame.draw.rect(surface, colors.COLOR_BORDER, self.rect, 1)
+        text_surf = font.render(self.text, True, fg)
+        text_rect = text_surf.get_rect(center=self.rect.center)
+        surface.blit(text_surf, text_rect)
 
 
 class SudokuUI:
@@ -354,8 +391,6 @@ class SudokuUI:
             return True
         return False
 
-<<<<<<< HEAD
-=======
     def is_digit_highlighted(self, row: int, col: int) -> bool:
         """
         Check if a cell should be highlighted because it contains the
@@ -369,7 +404,6 @@ class SudokuUI:
             return False
         return self.game.board[row, col] == sel_digit
 
->>>>>>> 9e839a1566699572ecf80c319b1a8ea47ee095ac
     def draw_cell(self, surface: pygame.Surface, row: int, col: int):
         """Draw a single Sudoku cell with styling"""
         rect = self.get_cell_rect(row, col)
@@ -383,12 +417,9 @@ class SudokuUI:
         elif (row, col) == self.hover_cell:
             cell_color = self.colors.COLOR_CELL_HOVER
             glow = False
-<<<<<<< HEAD
-=======
         elif self.is_digit_highlighted(row, col):
             cell_color = self.colors.COLOR_CELL_HIGHLIGHT
             glow = False
->>>>>>> 9e839a1566699572ecf80c319b1a8ea47ee095ac
         elif self.is_highlighted(row, col):
             cell_color = self.colors.COLOR_CELL_HIGHLIGHT
             glow = False
@@ -437,11 +468,7 @@ class SudokuUI:
         pygame.draw.rect(surface, self.colors.COLOR_ACCENT, panel_rect, 2)
         
         # Title
-<<<<<<< HEAD
-        title = self.get_text_cached("RL Solver", self.font_normal, self.colors.COLOR_ACCENT)
-=======
         title = self.get_text_cached("Sudoku Solver", self.font_normal, self.colors.COLOR_ACCENT)
->>>>>>> 9e839a1566699572ecf80c319b1a8ea47ee095ac
         surface.blit(title, (panel_rect.x + 20, panel_rect.y + 10))
         
         # Info text
@@ -450,20 +477,6 @@ class SudokuUI:
             self.font_small, self.colors.COLOR_TEXT
         )
         surface.blit(difficulty_text, (panel_rect.x + 20, panel_rect.y + 35))
-<<<<<<< HEAD
-        
-        fps_text = self.get_text_cached(f"FPS: {fps:.1f}", self.font_small, self.colors.COLOR_TEXT)
-        surface.blit(fps_text, (panel_rect.x + 20, panel_rect.y + 55))
-        
-        if status:
-            status_text = self.get_text_cached(status, self.font_small, self.colors.COLOR_SOLVED)
-            surface.blit(status_text, (panel_rect.x + 20, panel_rect.y + 75))
-
-        # Theme mode indicator
-        mode_label = "Dark Mode" if ui_config.dark_mode else "Light Mode"
-        mode_text = self.get_text_cached(mode_label, self.font_small, self.colors.COLOR_TEXT)
-        surface.blit(mode_text, (panel_rect.x + 20, panel_rect.y + 95))
-=======
 
         # Score and time (rendered fresh each frame)
         score = self.compute_score()
@@ -489,25 +502,16 @@ class SudokuUI:
         """Draw all UI buttons"""
         for btn in self.buttons:
             btn.draw(surface, self.font_small, self.colors)
->>>>>>> 9e839a1566699572ecf80c319b1a8ea47ee095ac
     
     def draw_instructions(self, surface: pygame.Surface):
         """Draw control instructions"""
         instructions = [
             "CONTROLS:",
             "Click cell + type digit: Place number",
-<<<<<<< HEAD
-            "R: Reset board",
-            "H: Get hint",
-            "T: Toggle dark/light mode",
-            "SPACE: Auto-solve (RL Agent)",
-            "Q: Quit"
-=======
             "Delete/Backspace: Clear cell",
             "Ctrl+Z: Undo last move",
             "H: Get hint   Q: Quit",
             "SPACE: Run active solver",
->>>>>>> 9e839a1566699572ecf80c319b1a8ea47ee095ac
         ]
         
         y_offset = self.board_y + 9 * self.cell_size + 30
