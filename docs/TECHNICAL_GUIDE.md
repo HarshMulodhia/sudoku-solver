@@ -173,17 +173,17 @@ Loss = SmoothL1(Q(state, action), y)
 ∇Loss.backward()
 clip_grad_norm_(params, 1.0)
 
-# 7. Every 500 steps: Q_target ← Q_network
+# 7. Every 100 steps: Q_target ← Q_network
 ```
 
 **Hyperparameters:**
-- Learning rate: 0.0001 (Adam optimizer)
-- Gamma (γ): 0.95 (discount factor)
-- Epsilon (ε): 1.0 → 0.05 (decay factor 0.999 per episode)
-- Batch size: 64
+- Learning rate: 0.001 (Adam optimizer)
+- Gamma (γ): 0.99 (discount factor)
+- Epsilon (ε): 1.0 → 0.05 (decay factor 0.995 per episode)
+- Batch size: 128
 - Replay buffer: 50K experiences
-- Target network update: Every 500 steps
-- Reward clipping: ±50
+- Target network update: Every 100 steps
+- Reward clipping: ±250
 
 ### Reward Shaping
 
@@ -402,15 +402,15 @@ INPUT_SHAPE = (9, 9, 10)
 OUTPUT_SIZE = 729
 CONV_CHANNELS = [16, 32, 64]
 HIDDEN_LAYERS = [256, 128, 64]
-LEARNING_RATE = 0.0001
-GAMMA = 0.95
+LEARNING_RATE = 0.001
+GAMMA = 0.99
 EPSILON_START = 1.0
 EPSILON_END = 0.05
-EPSILON_DECAY = 0.999
-BATCH_SIZE = 64
+EPSILON_DECAY = 0.995
+BATCH_SIZE = 128
 MEMORY_SIZE = 50000
-TARGET_UPDATE_FREQ = 500
-REWARD_CLIP = 50.0
+TARGET_UPDATE_FREQ = 100
+REWARD_CLIP = 250.0
 ```
 
 **UI Config:**
@@ -577,12 +577,12 @@ Q(s,a) ← Q_target(s',a')  (frozen for N steps)
 ## Troubleshooting
 
 ### Model not training (loss stays constant)
-→ Check learning rate (default 0.0001)
+→ Check learning rate (default 0.001)
 → Verify reward signal provides gradient
 → Ensure valid actions exist
 
 ### GPU out of memory
-→ Reduce BATCH_SIZE to 32
+→ Reduce BATCH_SIZE to 64
 → Reduce MEMORY_SIZE to 25000
 → Use fp16 training (requires autocast)
 

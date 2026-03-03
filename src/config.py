@@ -20,19 +20,19 @@ class RLConfig:
     CONV_CHANNELS: list = None
     
     # Learning Parameters
-    LEARNING_RATE: float = 0.0001
-    GAMMA: float = 0.95  # Discount factor
+    LEARNING_RATE: float = 0.001
+    GAMMA: float = 0.99  # Discount factor
     EPSILON_START: float = 1.0
     EPSILON_END: float = 0.05
-    EPSILON_DECAY: float = 0.999
-    BATCH_SIZE: int = 64
+    EPSILON_DECAY: float = 0.995
+    BATCH_SIZE: int = 128
     MEMORY_SIZE: int = 50000
     
     # Training
-    TARGET_UPDATE_FREQ: int = 500
+    TARGET_UPDATE_FREQ: int = 100
     TRAINING_EPISODES: int = 2000
     MAX_STEPS: int = 81
-    REWARD_CLIP: float = 50.0
+    REWARD_CLIP: float = 250.0
     
     def __post_init__(self):
         if self.HIDDEN_LAYERS is None:

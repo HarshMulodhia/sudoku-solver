@@ -527,12 +527,12 @@ def quantize_model(agent):
 
 | Problem | Cause | Solution |
 |---------|-------|----------|
-| Loss not decreasing | Bad learning rate | Default is 0.0001; try multiplying by 0.1 every 500 episodes |
+| Loss not decreasing | Bad learning rate | Default is 0.001; try multiplying by 0.1 every 500 episodes |
 | Agent never learns | No valid actions | Verify `get_valid_actions()` returns moves |
-| Training diverges | Gradient explosion | Gradient clipping (max norm 1.0) and reward clipping (±50) are already enabled |
+| Training diverges | Gradient explosion | Gradient clipping (max norm 1.0) and reward clipping (±250) are already enabled |
 | Overfitting to difficulty | No variety | Use curriculum learning or data augmentation |
 | Slow training | Memory bottleneck | Use mixed precision (float16) or batch accumulation |
-| GPU memory full | Large batch | Reduce BATCH_SIZE (default 64) or MEMORY_SIZE (default 50000) |
+| GPU memory full | Large batch | Reduce BATCH_SIZE (default 128) or MEMORY_SIZE (default 50000) |
 
 ---
 
