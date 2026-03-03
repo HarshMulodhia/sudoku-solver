@@ -18,11 +18,29 @@ class TestRLConfig:
         cfg = RLConfig()
         assert cfg.INPUT_SHAPE == (9, 9, 10)
         assert cfg.OUTPUT_SIZE == 729
-        assert cfg.HIDDEN_LAYERS == [256, 256, 128]
+        assert cfg.HIDDEN_LAYERS == [256, 128, 64]
+        assert cfg.CONV_CHANNELS == [16, 32, 64]
 
     def test_post_init_hidden_layers(self):
         cfg = RLConfig(HIDDEN_LAYERS=None)
-        assert cfg.HIDDEN_LAYERS == [256, 256, 128]
+        assert cfg.HIDDEN_LAYERS == [256, 128, 64]
+
+    def test_post_init_conv_channels(self):
+        cfg = RLConfig(CONV_CHANNELS=None)
+        assert cfg.CONV_CHANNELS == [16, 32, 64]
+
+    def test_custom_hidden_layers(self):
+        cfg = RLConfig(HIDDEN_LAYERS=[64, 32, 16])
+        assert cfg.HIDDEN_LAYERS == [64, 32, 16]
+
+    def test_optimized_hyperparameters(self):
+        cfg = RLConfig()
+        assert cfg.LEARNING_RATE == 0.0005
+        assert cfg.GAMMA == 0.99
+        assert cfg.EPSILON_DECAY == 0.995
+        assert cfg.BATCH_SIZE == 128
+        assert cfg.MEMORY_SIZE == 50000
+        assert cfg.TARGET_UPDATE_FREQ == 100
 
 
 class TestUIConfig:
@@ -70,6 +88,18 @@ class TestRewardConfig:
     def test_invalid_move_negative(self):
         cfg = RewardConfig()
         assert cfg.INVALID_MOVE_PENALTY < 0
+
+    def test_correct_move_reward_positive(self):
+        cfg = RewardConfig()
+        assert cfg.CORRECT_MOVE_REWARD > 0
+
+    def test_wrong_move_penalty_negative(self):
+        cfg = RewardConfig()
+        assert cfg.WRONG_MOVE_PENALTY < 0
+
+    def test_completion_reward_positive(self):
+        cfg = RewardConfig()
+        assert cfg.COMPLETION_REWARD > 0
 
 
 class TestDifficultyLevels:

@@ -4,8 +4,49 @@ import pygame
 import numpy as np
 from typing import Tuple, Optional, List
 import math
+import time as _time
 from config import ui_config, game_config
 from sudoku_game import SudokuGame
+
+
+class Button:
+    """Clickable UI button"""
+
+    def __init__(self, x: int, y: int, width: int, height: int, text: str,
+                 active: bool = False):
+        self.rect = pygame.Rect(x, y, width, height)
+        self.text = text
+        self.active = active
+        self.hovered = False
+
+    def is_clicked(self, pos: Tuple[int, int]) -> bool:
+        """Check if the button was clicked"""
+        return self.rect.collidepoint(pos)
+
+    def update_hover(self, pos: Tuple[int, int]):
+        """Update hover state"""
+        self.hovered = self.rect.collidepoint(pos)
+
+    def draw(self, surface: pygame.Surface, font: pygame.font.Font,
+             colors):
+        """Draw the button"""
+        if self.active:
+            bg = colors.COLOR_ACCENT
+            text_color = colors.COLOR_BG
+        elif self.hovered:
+            bg = colors.COLOR_CELL_HOVER
+            text_color = colors.COLOR_TEXT
+        else:
+            bg = colors.COLOR_PANEL_BG
+            text_color = colors.COLOR_TEXT
+
+        pygame.draw.rect(surface, bg, self.rect, border_radius=6)
+        pygame.draw.rect(surface, colors.COLOR_ACCENT, self.rect,
+                         width=2, border_radius=6)
+
+        text_surf = font.render(self.text, True, text_color)
+        text_rect = text_surf.get_rect(center=self.rect.center)
+        surface.blit(text_surf, text_rect)
 
 class Particle:
     """Particle effect for animations"""
@@ -131,6 +172,122 @@ class SudokuUI:
         self.box_size = 3 * self.cell_size
         self.box_border_width = 4
         self.box_highlight_alpha = 20  # Subtle background
+
+        # Mode and timer state
+        self.mode = 'manual'  # 'manual', 'rl', 'backtracking'
+        self.start_time = _time.time()
+        self.score = 0
+
+        # Undo stack: list of (row, col, previous_digit) tuples
+        self.undo_stack = []
+
+        # Create buttons
+        self._init_buttons()
+
+    def _init_buttons(self):
+        """Create all UI buttons"""
+        panel_x = self.board_x + 9 * self.cell_size + 50
+        btn_w = 135
+        btn_h = 32
+        gap = 8
+
+        # Theme toggle
+        y = self.board_y + 130
+        self.btn_theme = Button(panel_x, y, btn_w * 2 + gap, btn_h,
+                                "Toggle Dark/Light")
+
+        # Difficulty buttons
+        y += btn_h + 20
+        third_w = (btn_w * 2 + gap - 2 * gap) // 3
+        self.btn_easy = Button(panel_x, y, third_w, btn_h,
+                               "Easy",
+                               active=(self.game.difficulty == 'easy'))
+        self.btn_medium = Button(
+            panel_x + third_w + gap, y, third_w, btn_h,
+            "Medium",
+            active=(self.game.difficulty == 'medium'))
+        self.btn_hard = Button(
+            panel_x + 2 * (third_w + gap), y, third_w, btn_h,
+            "Hard",
+            active=(self.game.difficulty == 'hard'))
+
+        # Mode buttons
+        y += btn_h + 20
+        self.btn_manual = Button(panel_x, y, btn_w, btn_h,
+                                 "Manual Play", active=True)
+        self.btn_rl = Button(panel_x + btn_w + gap, y, btn_w, btn_h,
+                             "RL Solver")
+        y += btn_h + gap
+        self.btn_backtrack = Button(panel_x, y, btn_w * 2 + gap, btn_h,
+                                    "Backtracking Solver")
+
+        # Reset / undo buttons
+        y += btn_h + 20
+        self.btn_new_puzzle = Button(panel_x, y, btn_w, btn_h,
+                                     "New Puzzle")
+        self.btn_reset_entries = Button(panel_x + btn_w + gap, y, btn_w, btn_h,
+                                        "Reset Entries")
+        y += btn_h + gap
+        self.btn_undo = Button(panel_x, y, btn_w * 2 + gap, btn_h,
+                               "Undo (Ctrl+Z)")
+
+        self.buttons = [
+            self.btn_theme,
+            self.btn_easy, self.btn_medium, self.btn_hard,
+            self.btn_manual, self.btn_rl, self.btn_backtrack,
+            self.btn_new_puzzle, self.btn_reset_entries,
+            self.btn_undo,
+        ]
+
+        self.mode_buttons = [self.btn_manual, self.btn_rl, self.btn_backtrack]
+        self.difficulty_buttons = [self.btn_easy, self.btn_medium,
+                                   self.btn_hard]
+    
+    def set_mode(self, mode: str):
+        """Set the active solver mode"""
+        self.mode = mode
+        for btn in self.mode_buttons:
+            btn.active = False
+        if mode == 'manual':
+            self.btn_manual.active = True
+        elif mode == 'rl':
+            self.btn_rl.active = True
+        elif mode == 'backtracking':
+            self.btn_backtrack.active = True
+
+    def set_difficulty(self, difficulty: str):
+        """Set the active difficulty and update button states"""
+        for btn in self.difficulty_buttons:
+            btn.active = False
+        if difficulty == 'easy':
+            self.btn_easy.active = True
+        elif difficulty == 'medium':
+            self.btn_medium.active = True
+        elif difficulty == 'hard':
+            self.btn_hard.active = True
+
+    def reset_timer(self):
+        """Reset the game timer"""
+        self.start_time = _time.time()
+        self.score = 0
+
+    def get_elapsed(self) -> str:
+        """Return elapsed time as mm:ss"""
+        elapsed = int(_time.time() - self.start_time)
+        minutes = elapsed // 60
+        seconds = elapsed % 60
+        return f"{minutes:02d}:{seconds:02d}"
+
+    def compute_score(self) -> int:
+        """Compute score as number of correctly placed digits"""
+        score = 0
+        for i in range(9):
+            for j in range(9):
+                if self.game.original_board[i, j] == 0 and self.game.board[i, j] != 0:
+                    if self.game.board[i, j] == self.game.solution[i, j]:
+                        score += 1
+        self.score = score
+        return score
     
     def toggle_theme(self):
         """Toggle between dark and light mode"""
@@ -232,6 +389,19 @@ class SudokuUI:
             return True
         return False
 
+    def is_digit_highlighted(self, row: int, col: int) -> bool:
+        """
+        Check if a cell should be highlighted because it contains the
+        same digit as the currently selected cell.
+        """
+        if self.selected_cell is None:
+            return False
+        sel_row, sel_col = self.selected_cell
+        sel_digit = self.game.board[sel_row, sel_col]
+        if sel_digit == 0:
+            return False
+        return self.game.board[row, col] == sel_digit
+
     def draw_cell(self, surface: pygame.Surface, row: int, col: int):
         """Draw a single Sudoku cell with styling"""
         rect = self.get_cell_rect(row, col)
@@ -244,6 +414,9 @@ class SudokuUI:
             glow = True
         elif (row, col) == self.hover_cell:
             cell_color = self.colors.COLOR_CELL_HOVER
+            glow = False
+        elif self.is_digit_highlighted(row, col):
+            cell_color = self.colors.COLOR_CELL_HIGHLIGHT
             glow = False
         elif self.is_highlighted(row, col):
             cell_color = self.colors.COLOR_CELL_HIGHLIGHT
@@ -283,7 +456,7 @@ class SudokuUI:
                 self.draw_cell(surface, row, col)
     
     def draw_ui_info(self, surface: pygame.Surface, fps: float, status: str = ""):
-        """Draw UI information panel"""
+        """Draw UI information panel with score and time"""
         panel_height = 120
         panel_rect = pygame.Rect(self.board_x + 9 * self.cell_size + 50, 
                                  self.board_y, 300, panel_height)
@@ -293,7 +466,7 @@ class SudokuUI:
         pygame.draw.rect(surface, self.colors.COLOR_ACCENT, panel_rect, 2)
         
         # Title
-        title = self.get_text_cached("RL Solver", self.font_normal, self.colors.COLOR_ACCENT)
+        title = self.get_text_cached("Sudoku Solver", self.font_normal, self.colors.COLOR_ACCENT)
         surface.blit(title, (panel_rect.x + 20, panel_rect.y + 10))
         
         # Info text
@@ -302,29 +475,41 @@ class SudokuUI:
             self.font_small, self.colors.COLOR_TEXT
         )
         surface.blit(difficulty_text, (panel_rect.x + 20, panel_rect.y + 35))
-        
-        fps_text = self.get_text_cached(f"FPS: {fps:.1f}", self.font_small, self.colors.COLOR_TEXT)
-        surface.blit(fps_text, (panel_rect.x + 20, panel_rect.y + 55))
+
+        # Score and time (rendered fresh each frame)
+        score = self.compute_score()
+        empty = int(np.sum(self.game.original_board == 0))
+        score_surf = self.font_small.render(
+            f"Score: {score}/{empty}", True, self.colors.COLOR_SOLVED)
+        surface.blit(score_surf, (panel_rect.x + 20, panel_rect.y + 55))
+
+        time_surf = self.font_small.render(
+            f"Time: {self.get_elapsed()}", True, self.colors.COLOR_TEXT)
+        surface.blit(time_surf, (panel_rect.x + 160, panel_rect.y + 55))
         
         if status:
-            status_text = self.get_text_cached(status, self.font_small, self.colors.COLOR_SOLVED)
-            surface.blit(status_text, (panel_rect.x + 20, panel_rect.y + 75))
+            status_surf = self.font_small.render(status, True, self.colors.COLOR_SOLVED)
+            surface.blit(status_surf, (panel_rect.x + 20, panel_rect.y + 75))
 
-        # Theme mode indicator
-        mode_label = "Dark Mode" if ui_config.dark_mode else "Light Mode"
-        mode_text = self.get_text_cached(mode_label, self.font_small, self.colors.COLOR_TEXT)
-        surface.blit(mode_text, (panel_rect.x + 20, panel_rect.y + 95))
+        # Mode label
+        mode_label = f"Mode: {self.mode.replace('_', ' ').title()}"
+        mode_surf = self.font_small.render(mode_label, True, self.colors.COLOR_TEXT)
+        surface.blit(mode_surf, (panel_rect.x + 20, panel_rect.y + 95))
+
+    def draw_buttons(self, surface: pygame.Surface):
+        """Draw all UI buttons"""
+        for btn in self.buttons:
+            btn.draw(surface, self.font_small, self.colors)
     
     def draw_instructions(self, surface: pygame.Surface):
         """Draw control instructions"""
         instructions = [
             "CONTROLS:",
             "Click cell + type digit: Place number",
-            "R: Reset board",
-            "H: Get hint",
-            "T: Toggle dark/light mode",
-            "SPACE: Auto-solve (RL Agent)",
-            "Q: Quit"
+            "Delete/Backspace: Clear cell",
+            "Ctrl+Z: Undo last move",
+            "H: Get hint   Q: Quit",
+            "SPACE: Run active solver",
         ]
         
         y_offset = self.board_y + 9 * self.cell_size + 30
@@ -359,6 +544,9 @@ class SudokuUI:
         
         # Draw info panel
         self.draw_ui_info(surface, fps, status)
+
+        # Draw buttons
+        self.draw_buttons(surface)
         
         # Draw instructions
         self.draw_instructions(surface)
@@ -400,12 +588,49 @@ class SudokuUI:
     def handle_mouse_motion(self, pos: Tuple[int, int]):
         """Handle mouse motion"""
         self.hover_cell = self.get_cell_from_pos(pos[0], pos[1])
+        for btn in self.buttons:
+            btn.update_hover(pos)
     
-    def handle_mouse_click(self, pos: Tuple[int, int]):
-        """Handle mouse click"""
+    def handle_mouse_click(self, pos: Tuple[int, int]) -> Optional[str]:
+        """Handle mouse click.
+
+        Returns:
+            A string action name if a button was clicked, else None.
+        """
+        # Check buttons first
+        if self.btn_theme.is_clicked(pos):
+            self.toggle_theme()
+            return 'toggle_theme'
+        if self.btn_easy.is_clicked(pos):
+            self.set_difficulty('easy')
+            return 'difficulty_easy'
+        if self.btn_medium.is_clicked(pos):
+            self.set_difficulty('medium')
+            return 'difficulty_medium'
+        if self.btn_hard.is_clicked(pos):
+            self.set_difficulty('hard')
+            return 'difficulty_hard'
+        if self.btn_manual.is_clicked(pos):
+            self.set_mode('manual')
+            return 'mode_manual'
+        if self.btn_rl.is_clicked(pos):
+            self.set_mode('rl')
+            return 'mode_rl'
+        if self.btn_backtrack.is_clicked(pos):
+            self.set_mode('backtracking')
+            return 'mode_backtracking'
+        if self.btn_new_puzzle.is_clicked(pos):
+            return 'new_puzzle'
+        if self.btn_reset_entries.is_clicked(pos):
+            return 'reset_entries'
+        if self.btn_undo.is_clicked(pos):
+            return 'undo'
+
+        # Otherwise select a cell on the board
         cell = self.get_cell_from_pos(pos[0], pos[1])
         if cell:
             self.selected_cell = cell
+        return None
     
     def handle_key_press(self, key: int) -> Optional[int]:
         """

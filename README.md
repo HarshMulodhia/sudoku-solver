@@ -1,4 +1,12 @@
-# Sudoku RL Solver - Installation & Setup Guide
+# Sudoku RL Solver
+
+![CI](https://github.com/HarshMulodhia/sudoku-solver/actions/workflows/ci.yml/badge.svg)
+
+A modular Sudoku-solving toolkit that pairs a **deterministic backtracking
+solver** (constraint propagation + MRV heuristic) with a **Deep Q-Network
+(DQN) reinforcement-learning agent**, all wrapped in an interactive
+**pygame UI** featuring a cyberpunk dark/light theme, particle effects,
+and real-time solving visualisation.
 
 ![CI](https://github.com/HarshMulodhia/sudoku-solver/actions/workflows/ci.yml/badge.svg)
 
@@ -36,9 +44,9 @@ sudoku-rl-solver/
 │   ├── __init__.py
 │   ├── config.py              # Configuration & hyperparameters
 │   ├── sudoku_game.py         # Game logic & constraint handling
-│   ├── rl_agent.py            # DQN agent implementation
+│   ├── rl_agent.py            # Double DQN agent implementation
 │   ├── backtracking_solver.py # Deterministic backtracking solver
-│   └── pygame_ui.py           # High-tech pygame interface
+│   └── pygame_ui.py           # Interactive pygame interface
 ├── scripts/                   # Executable scripts
 │   ├── train.py               # Training script
 │   └── solver.py              # Inference & visualization
@@ -47,6 +55,7 @@ sudoku-rl-solver/
 ├── tests/                     # Test suite
 │   ├── test_config.py
 │   ├── test_sudoku_game.py
+│   ├── test_pygame_ui.py
 │   ├── test_rl_agent.py
 │   └── test_backtracking_solver.py
 └── models/                    # Saved trained models
@@ -78,14 +87,31 @@ python -m pytest tests/ -v
 ## Features
 
 ### RL Component
-- **Algorithm**: Deep Q-Network (DQN) with Experience Replay
-- **State Representation**: 9×9×10 tensor (position × 10 digit possibilities)
-- **Action Space**: 81 × 9 (cell × digit selections)
+- **Algorithm**: Double DQN with Experience Replay and SmoothL1 (Huber) loss
+- **Architecture**: 3 Conv2d layers (10→16→32→64) + 3 FC layers (256→128→64) ≈ 1.4 M parameters
+- **State Representation**: 9×9×10 one-hot tensor (empty-cell indicator + digit channels)
+- **Action Space**: 81 × 9 = 729 (cell × digit selections)
 - **Reward System**:
-  - +10 for valid cell fill
-  - -1 for invalid move
-  - +100 for puzzle completion
-  - Constraint violation penalties
+  - +1 for a valid move
+  - +10 for placing the correct digit (matches solution)
+  - −10 for a wrong digit or invalid move
+  - +200 for puzzle completion
+
+### Deterministic Backtracking Solver
+- **Algorithm**: Constraint propagation (naked singles) + recursive backtracking
+- **Heuristic**: Minimum Remaining Values (MRV) – always branches on the cell with the fewest candidates
+- **Guarantee**: Finds a valid solution whenever one exists (100 % success rate)
+- **Speed**: Solves most 9×9 puzzles in < 5 ms
+
+### Solver Comparison Notebook
+A Jupyter notebook (`notebooks/solver_comparison.ipynb`) benchmarks both solvers
+on easy / medium / hard puzzles and compares correctness, speed, and reliability.
+When a trained model exists at `models/sudoku_dqn_{difficulty}.pth` the notebook
+loads it automatically; otherwise it falls back to untrained weights.
+Run it with:
+```bash
+cd notebooks && jupyter notebook solver_comparison.ipynb
+```
 
 ### Deterministic Backtracking Solver
 - **Algorithm**: Constraint propagation (naked singles) + recursive backtracking
@@ -102,7 +128,9 @@ cd notebooks && jupyter notebook solver_comparison.ipynb
 ```
 
 ### UI Features
-- **Modern Design**: Dark theme with neon accents
+- **Modern Design**: Dark/Light theme toggle with neon accents
+- **3×3 Box Borders**: Thick borders and alternating backgrounds differentiate 3×3 blocks
+- **Digit Highlighting**: Selecting a cell highlights all cells with the same digit
 - **Animations**: 
   - Smooth cell highlighting
   - Particle effects on valid solutions
@@ -112,15 +140,16 @@ cd notebooks && jupyter notebook solver_comparison.ipynb
   - Mouse/keyboard input
   - Real-time hint system
   - Step-by-step execution
-  - Difficulty selection
+  - Difficulty selection (Easy/Medium/Hard buttons)
+  - Undo support (button and Ctrl+Z)
 
 ## Configuration
 
 Edit `src/config.py` to customize:
-- Neural network architecture
-- Learning hyperparameters (α, γ, ε)
-- Replay buffer size
-- Training episodes
+- Neural network architecture (conv channels, hidden layer sizes)
+- Learning hyperparameters (LR = 0.0005, γ = 0.99, ε decay = 0.995)
+- Replay buffer size (50 000) and batch size (128)
+- Target network sync frequency (every 100 steps)
 - UI theme and animation speed
 
 ## Performance Metrics
