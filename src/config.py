@@ -40,6 +40,22 @@ class RLConfig:
         if self.CONV_CHANNELS is None:
             self.CONV_CHANNELS = [16, 32, 64]
 
+
+@dataclass
+class PPOConfig:
+    """PPO-specific hyperparameters"""
+    CLIP_EPSILON: float = 0.2
+    VALUE_LOSS_COEF: float = 0.5
+    ENTROPY_COEF: float = 0.01
+    GAE_LAMBDA: float = 0.95
+    PPO_EPOCHS: int = 4
+    MINI_BATCH_SIZE: int = 64
+    MAX_GRAD_NORM: float = 0.5
+    ROLLOUT_LENGTH: int = 128
+    LEARNING_RATE: float = 0.0003
+    GAMMA: float = 0.99
+    MAX_STEPS: int = 81
+
 @dataclass
 class ThemeColors:
     """Color palette for a UI theme"""
@@ -138,6 +154,7 @@ class RewardConfig:
 # Instantiate configs
 game_config = GameConfig()
 rl_config = RLConfig()
+ppo_config = PPOConfig()
 ui_config = UIConfig()
 reward_config = RewardConfig()
 

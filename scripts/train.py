@@ -10,13 +10,13 @@ import torch
 # Allow running directly: add src/ to path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
 
-from config import rl_config, DIFFICULTY_LEVELS
+from config import rl_config, ppo_config, DIFFICULTY_LEVELS
 from sudoku_game import SudokuGame
-from rl_agent import SudokuRLAgent, auto_detect_device
+from rl_agent import SudokuRLAgent, SudokuPPOAgent, auto_detect_device
 
 def train_agent(episodes: int = 1000, difficulty: str = 'medium', device: str = 'cuda'):
     """
-    Train the RL agent on Sudoku puzzles
+    Train the DQN RL agent on Sudoku puzzles
     
     Args:
         episodes: Number of training episodes
@@ -25,7 +25,7 @@ def train_agent(episodes: int = 1000, difficulty: str = 'medium', device: str = 
     """
     agent = SudokuRLAgent(device=device)
     
-    print(f"Training on {difficulty.upper()} puzzles for {episodes} episodes...")
+    print(f"Training DQN on {difficulty.upper()} puzzles for {episodes} episodes...")
     print(f"Device: {device}")
     print(f"Network: {sum(p.numel() for p in agent.q_network.parameters())} parameters\n")
     
@@ -111,12 +111,102 @@ def train_agent(episodes: int = 1000, difficulty: str = 'medium', device: str = 
     
     return agent, episode_rewards, episode_steps
 
+
+def train_ppo_agent(episodes: int = 1000, difficulty: str = 'medium',
+                    device: str = 'cuda'):
+    """
+    Train the PPO RL agent on Sudoku puzzles.
+
+    Args:
+        episodes: Number of training episodes
+        difficulty: 'easy', 'medium', or 'hard'
+        device: 'cuda', 'mps', or 'cpu'
+    """
+    agent = SudokuPPOAgent(device=device)
+
+    print(f"Training PPO on {difficulty.upper()} puzzles for {episodes} episodes...")
+    print(f"Device: {device}")
+    print(f"Network: {sum(p.numel() for p in agent.network.parameters())} parameters\n")
+
+    episode_rewards = []
+    episode_steps = []
+    episode_losses = []
+    global_step = 0
+
+    for episode in tqdm(range(episodes)):
+        game = SudokuGame(difficulty=difficulty)
+        state = game.get_encoded_state()
+
+        episode_reward = 0.0
+
+        for step in range(ppo_config.MAX_STEPS):
+            valid_actions = agent.get_valid_actions(game)
+
+            if not valid_actions:
+                break
+
+            # Select action with log prob for PPO
+            action, action_idx, log_prob, value = \
+                agent.select_action_with_log_prob(state, valid_actions)
+            row, col, digit = action
+
+            was_valid = game.place_digit(row, col, digit)
+            reward = agent.compute_reward(game, (row, col), digit, was_valid)
+            episode_reward += reward
+
+            # Undo wrong placements to keep board solvable
+            is_correct = was_valid and game.solution[row, col] == digit
+            if was_valid and not is_correct:
+                game.board[row, col] = 0
+
+            next_state = game.get_encoded_state()
+            done = game.is_solved()
+
+            action_mask = agent._build_action_mask(valid_actions)
+            agent.remember(state, action_idx, log_prob, reward, value,
+                           done, action_mask)
+
+            state = next_state
+            global_step += 1
+
+            if done:
+                break
+
+        # Train after each episode
+        loss = agent.train_step()
+        episode_rewards.append(episode_reward)
+        episode_steps.append(step + 1)
+        if loss > 0:
+            episode_losses.append(loss)
+
+        # Log progress
+        if (episode + 1) % 50 == 0:
+            avg_reward = np.mean(episode_rewards[-50:])
+            avg_steps = np.mean(episode_steps[-50:])
+            avg_loss = np.mean(episode_losses[-50:]) if episode_losses else 0
+
+            print(f"\nEpisode {episode + 1}/{episodes}")
+            print(f"  Avg Reward: {avg_reward:.2f}")
+            print(f"  Avg Steps: {avg_steps:.1f}")
+            print(f"  Avg Loss: {avg_loss:.4f}")
+
+    # Save model
+    os.makedirs('models', exist_ok=True)
+    model_path = f'models/sudoku_ppo_{difficulty}.pth'
+    agent.save_model(model_path)
+    print(f"\nModel saved to {model_path}")
+
+    return agent, episode_rewards, episode_steps
+
 def main():
     parser = argparse.ArgumentParser(description='Train Sudoku RL Agent')
     parser.add_argument('--episodes', type=int, default=500, help='Number of training episodes')
     parser.add_argument('--difficulty', type=str, default='medium', choices=['easy', 'medium', 'hard'])
     parser.add_argument('--device', type=str, default='auto',
                         choices=['auto', 'cuda', 'mps', 'cpu'])
+    parser.add_argument('--algorithm', type=str, default='ppo',
+                        choices=['dqn', 'ppo'],
+                        help='RL algorithm to use (default: ppo)')
     
     args = parser.parse_args()
     
@@ -134,7 +224,18 @@ def main():
         print("MPS not available, falling back to auto-detection")
         args.device = auto_detect_device()
     
-    train_agent(episodes=args.episodes, difficulty=args.difficulty, device=args.device)
+    if args.algorithm == 'ppo':
+        train_ppo_agent(
+            episodes=args.episodes,
+            difficulty=args.difficulty,
+            device=args.device,
+        )
+    else:
+        train_agent(
+            episodes=args.episodes,
+            difficulty=args.difficulty,
+            device=args.device,
+        )
 
 if __name__ == '__main__':
     main()

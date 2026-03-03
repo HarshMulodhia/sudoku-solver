@@ -3,9 +3,10 @@
 ## Overview
 
 This guide covers advanced techniques and research directions for the
-Sudoku RL Solver.  The project already ships with a Double DQN agent
-(CNN + FC, ~1.4 M parameters) and a deterministic backtracking solver.
-The tips below can help you push the RL component further.
+Sudoku RL Solver.  The project ships with a **PPO** agent (Actor-Critic
+with shared CNN backbone) as the default algorithm, alongside a Double
+DQN agent (CNN + FC, ~1.4 M parameters) and a deterministic backtracking
+solver.  The tips below can help you push the RL component further.
 
 ## For Your Research Background (Autonomous Systems)
 
@@ -137,7 +138,26 @@ for i, batch in enumerate(batches):
 
 ## Advanced RL Techniques
 
-### 1. Dueling DQN (Better Value Estimation)
+### 1. PPO (Already Implemented — Default)
+
+The codebase now uses PPO as the default algorithm in `rl_agent.py`.
+PPO directly optimizes the policy using a clipped surrogate objective,
+avoiding the instabilities of off-policy Q-learning for Sudoku's large
+discrete action space (729 actions).
+
+**Key advantages over DQN:**
+- On-policy learning — no stale replay buffer
+- Invalid-action masking via logit masking — the agent never "sees"
+  illegal moves
+- Entropy bonus encourages diverse exploration
+- Clipped objective prevents catastrophic policy updates
+
+**Train with PPO:**
+```bash
+python scripts/train.py --algorithm ppo --episodes 1000 --difficulty medium
+```
+
+### 2. Dueling DQN (Better Value Estimation)
 
 **Architecture variation:**
 
@@ -185,7 +205,7 @@ class DuelingDQNNetwork(nn.Module):
 - Improved convergence
 - 20-30% faster learning
 
-### 2. Prioritized Experience Replay
+### 3. Prioritized Experience Replay
 
 ```python
 class PrioritizedReplayBuffer:
@@ -220,7 +240,7 @@ class PrioritizedReplayBuffer:
             self.priorities[idx] = priority
 ```
 
-### 3. Double DQN (Already Implemented)
+### 4. Double DQN (Already Implemented)
 
 The codebase already uses Double DQN in `rl_agent.py`:
 
@@ -235,7 +255,7 @@ target = reward + gamma * Q_target(next_state, best_action)
 #                          ^ Evaluate using different network
 ```
 
-### 4. Noisy Networks (Learned Exploration)
+### 5. Noisy Networks (Learned Exploration)
 
 ```python
 class NoisyLinear(nn.Module):
@@ -527,9 +547,10 @@ def quantize_model(agent):
 
 | Problem | Cause | Solution |
 |---------|-------|----------|
-| Loss not decreasing | Bad learning rate | Default is 0.001; try multiplying by 0.1 every 500 episodes |
+| Loss not decreasing | Bad learning rate | PPO default is 0.0003; DQN default is 0.001; try multiplying by 0.1 every 500 episodes |
 | Agent never learns | No valid actions | Verify `get_valid_actions()` returns moves |
-| Training diverges | Gradient explosion | Gradient clipping (max norm 1.0) and reward clipping (±250) are already enabled |
+| Training diverges | Gradient explosion | Gradient clipping (max norm 0.5 for PPO, 1.0 for DQN) and reward clipping (±250) are already enabled |
+| DQN agent doesn't solve | Off-policy instability | Switch to PPO: `--algorithm ppo` |
 | Overfitting to difficulty | No variety | Use curriculum learning or data augmentation |
 | Slow training | Memory bottleneck | Use mixed precision (float16) or batch accumulation |
 | GPU memory full | Large batch | Reduce BATCH_SIZE (default 128) or MEMORY_SIZE (default 50000) |
@@ -613,10 +634,11 @@ def adversarial_training(solver_agent, adversary_agent):
 
 Given your robotics background:
 
-1. **Start with the hybrid approach** - RL for exploration, backtracking for guarantees
-2. **Benchmark against classical solvers** - Understand where RL adds value
-3. **Use this as RL learning foundation** - Apply techniques to motion planning later
-4. **Publish results** - Interesting for RL in discrete domains
-5. **Consider graph-based extensions** - Your GCS work could inspire Sudoku solving
+1. **Start with PPO** - The default algorithm handles Sudoku's discrete action space better than DQN
+2. **Try the hybrid approach** - RL for exploration, backtracking for guarantees
+3. **Benchmark against classical solvers** - Understand where RL adds value
+4. **Use this as RL learning foundation** - Apply techniques to motion planning later
+5. **Publish results** - Interesting for RL in discrete domains
+6. **Consider graph-based extensions** - Your GCS work could inspire Sudoku solving
 
 The codebase is intentionally modular to support research extensions!
