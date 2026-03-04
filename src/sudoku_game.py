@@ -100,8 +100,7 @@ class SudokuGame:
         
         return True
     
-    def place_digit(self, row: int, col: int, digit: int,
-                    force: bool = False) -> bool:
+    def place_digit(self, row: int, col: int, digit: int, force: bool = False) -> bool:
         """
         Place a digit on the board
         
@@ -109,10 +108,10 @@ class SudokuGame:
             row: Row index
             col: Column index
             digit: Digit to place (1-9 or 0 to clear)
-            force: If True, bypass validity check (still cannot modify givens)
+            force: If True, skip validity check (for manual play)
         
         Returns:
-            True if placement was accepted, False otherwise
+            True if placement is valid, False otherwise
         """
         # Can't modify given cells
         if self.original_board[row, col] != 0:

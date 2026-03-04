@@ -12,9 +12,7 @@ dependencies:
 =======
 name: sudoku-solver
 channels:
-  - pytorch
-  - nvidia
-  - defaults
+  - conda-forge
 dependencies:
   - python>=3.9
   - numpy>=1.24
