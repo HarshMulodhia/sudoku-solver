@@ -13,7 +13,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
 
 from config import ui_config
 from sudoku_game import SudokuGame
-from rl_agent import SudokuRLAgent
+from rl_agent import SudokuRLAgent, SudokuPPOAgent
 from backtracking_solver import BacktrackingSolver
 from pygame_ui import SudokuUI
 
@@ -21,7 +21,7 @@ class InteractiveSudokuSolver:
     """Interactive Sudoku solver with pygame UI and RL agent"""
     
     def __init__(self, difficulty: str = 'medium', mode: str = 'play', 
-                 model_path: Optional[str] = None):
+                 model_path: Optional[str] = None, algorithm: str = 'ppo'):
         """
         Initialize solver
         
@@ -29,15 +29,20 @@ class InteractiveSudokuSolver:
             difficulty: 'easy', 'medium', or 'hard'
             mode: 'play' or 'solve'
             model_path: Path to trained model weights
+            algorithm: 'dqn' or 'ppo'
         """
         self.game = SudokuGame(difficulty=difficulty)
         self.ui = SudokuUI(self.game)
         self.mode = mode
         self.difficulty = difficulty
+        self.algorithm = algorithm
         
-        # Initialize RL agent
+        # Initialize RL agent based on algorithm
         device = 'cuda' if torch.cuda.is_available() else 'cpu'
-        self.agent = SudokuRLAgent(device=device)
+        if algorithm == 'ppo':
+            self.agent = SudokuPPOAgent(device=device)
+        else:
+            self.agent = SudokuRLAgent(device=device)
         
         # Load model if available
         if model_path and os.path.exists(model_path):
@@ -273,7 +278,7 @@ class InteractiveSudokuSolver:
             # Maintain FPS
             self.ui.tick(ui_config.FPS)
             frame_count += 1
-        
+            
         self.ui.quit()
         print("Exiting...")
 
@@ -286,16 +291,24 @@ def main():
                        help='play: manual + hints, solve: auto-solve demo')
     parser.add_argument('--model', type=str, default=None,
                        help='Path to trained model weights')
+    parser.add_argument('--algorithm', type=str, default='ppo',
+                       choices=['dqn', 'ppo'],
+                       help='RL algorithm to use (default: ppo)')
     
     args = parser.parse_args()
     
     # Auto-determine model path if not provided
     if args.model is None:
-        model_path = f'models/sudoku_ppo_{args.difficulty}.pth'
+        model_path = f'models/sudoku_{args.algorithm}_{args.difficulty}.pth'
     else:
         model_path = args.model
     
-    solver = InteractiveSudokuSolver(difficulty=args.difficulty, mode=args.mode, model_path=model_path)
+    solver = InteractiveSudokuSolver(
+        difficulty=args.difficulty, 
+        mode=args.mode, 
+        model_path=model_path,
+        algorithm=args.algorithm
+    )
     
     solver.run()
 
