@@ -102,7 +102,7 @@ python -m pytest tests/ -v
   - +10 for placing the correct digit (matches solution)
   - −10 for a wrong digit or invalid move
   - +200 for puzzle completion
-- **Stability**: Reward clipping (±50), target Q-value clipping, per-episode epsilon decay (DQN), gradient clipping (PPO)
+- **Stability**: Reward clipping (±250), target Q-value clipping, per-episode epsilon decay (DQN), gradient clipping (PPO)
 
 ### Deterministic Backtracking Solver
 - **Algorithm**: Constraint propagation (naked singles) + recursive backtracking
