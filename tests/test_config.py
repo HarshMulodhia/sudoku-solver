@@ -1,7 +1,7 @@
 """Tests for config module."""
 
 from config import (
-    GameConfig, RLConfig, UIConfig, RewardConfig,
+    GameConfig, RLConfig, PPOConfig, UIConfig, RewardConfig,
     ThemeColors, DARK_THEME, LIGHT_THEME, DIFFICULTY_LEVELS
 )
 
@@ -35,12 +35,13 @@ class TestRLConfig:
 
     def test_optimized_hyperparameters(self):
         cfg = RLConfig()
-        assert cfg.LEARNING_RATE == 0.0005
+        assert cfg.LEARNING_RATE == 0.001
         assert cfg.GAMMA == 0.99
         assert cfg.EPSILON_DECAY == 0.995
         assert cfg.BATCH_SIZE == 128
         assert cfg.MEMORY_SIZE == 50000
         assert cfg.TARGET_UPDATE_FREQ == 100
+        assert cfg.REWARD_CLIP == 250.0
 
 
 class TestUIConfig:
@@ -101,6 +102,7 @@ class TestRewardConfig:
         cfg = RewardConfig()
         assert cfg.COMPLETION_REWARD > 0
 
+
 class TestDifficultyLevels:
     def test_all_difficulties_present(self):
         assert "easy" in DIFFICULTY_LEVELS
@@ -110,3 +112,27 @@ class TestDifficultyLevels:
     def test_ordering(self):
         assert DIFFICULTY_LEVELS["easy"] > DIFFICULTY_LEVELS["medium"]
         assert DIFFICULTY_LEVELS["medium"] > DIFFICULTY_LEVELS["hard"]
+
+
+class TestPPOConfig:
+    def test_defaults(self):
+        cfg = PPOConfig()
+        assert cfg.CLIP_EPSILON == 0.2
+        assert cfg.VALUE_LOSS_COEF == 0.5
+        assert cfg.ENTROPY_COEF == 0.01
+        assert cfg.GAE_LAMBDA == 0.95
+        assert cfg.PPO_EPOCHS == 4
+        assert cfg.MINI_BATCH_SIZE == 64
+        assert cfg.MAX_GRAD_NORM == 0.5
+        assert cfg.ROLLOUT_LENGTH == 128
+        assert cfg.LEARNING_RATE == 0.0003
+        assert cfg.GAMMA == 0.99
+        assert cfg.MAX_STEPS == 81
+
+    def test_clip_epsilon_positive(self):
+        cfg = PPOConfig()
+        assert 0 < cfg.CLIP_EPSILON < 1
+
+    def test_entropy_coef_positive(self):
+        cfg = PPOConfig()
+        assert cfg.ENTROPY_COEF > 0

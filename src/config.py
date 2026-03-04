@@ -20,24 +20,41 @@ class RLConfig:
     CONV_CHANNELS: list = None
     
     # Learning Parameters
-    LEARNING_RATE: float = 0.0005
+    LEARNING_RATE: float = 0.001
     GAMMA: float = 0.99  # Discount factor
     EPSILON_START: float = 1.0
-    EPSILON_END: float = 0.01
+    EPSILON_END: float = 0.05
     EPSILON_DECAY: float = 0.995
     BATCH_SIZE: int = 128
     MEMORY_SIZE: int = 50000
     
     # Training
     TARGET_UPDATE_FREQ: int = 100
-    TRAINING_EPISODES: int = 1000
-    MAX_STEPS: int = 100
+    TRAINING_EPISODES: int = 2000
+    MAX_STEPS: int = 81
+    REWARD_CLIP: float = 250.0
     
     def __post_init__(self):
         if self.HIDDEN_LAYERS is None:
             self.HIDDEN_LAYERS = [256, 128, 64]
         if self.CONV_CHANNELS is None:
             self.CONV_CHANNELS = [16, 32, 64]
+
+
+@dataclass
+class PPOConfig:
+    """PPO-specific hyperparameters"""
+    CLIP_EPSILON: float = 0.2
+    VALUE_LOSS_COEF: float = 0.5
+    ENTROPY_COEF: float = 0.01
+    GAE_LAMBDA: float = 0.95
+    PPO_EPOCHS: int = 4
+    MINI_BATCH_SIZE: int = 64
+    MAX_GRAD_NORM: float = 0.5
+    ROLLOUT_LENGTH: int = 128
+    LEARNING_RATE: float = 0.0003
+    GAMMA: float = 0.99
+    MAX_STEPS: int = 81
 
 @dataclass
 class ThemeColors:
@@ -137,6 +154,7 @@ class RewardConfig:
 # Instantiate configs
 game_config = GameConfig()
 rl_config = RLConfig()
+ppo_config = PPOConfig()
 ui_config = UIConfig()
 reward_config = RewardConfig()
 
