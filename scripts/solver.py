@@ -291,7 +291,7 @@ def main():
     
     # Auto-determine model path if not provided
     if args.model is None:
-        model_path = f'models/sudoku_dqn_{args.difficulty}.pth'
+        model_path = f'models/sudoku_ppo_{args.difficulty}.pth'
     else:
         model_path = args.model
     

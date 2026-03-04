@@ -33,6 +33,3 @@ Thumbs.db
 # Coverage
 htmlcov/
 .coverage
-
-# Trained models
-models/
